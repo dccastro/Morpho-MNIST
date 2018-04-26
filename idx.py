@@ -12,7 +12,7 @@ def load_uint8(f):
 
 
 def save_uint8(data, f):
-    f.write(struct.pack('BBBB', 0, 0, 0x80, data.ndim))
+    f.write(struct.pack('BBBB', 0, 0, 0x08, data.ndim))
     f.write(struct.pack('>' + 'I' * data.ndim, *data.shape))
     f.write(data.tobytes())
 
