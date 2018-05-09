@@ -1,13 +1,10 @@
 import timeit
-from collections import deque
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-import torchvision
 from skimage import transform
 
-from morpho import preprocess_img
+from morpho import ImageMorphology
 from operations import op_power, op_thicken, op_thin
 from util import plot_digit, plot_ellipse
 
@@ -25,7 +22,10 @@ OP_NAMES = ["Thinned", "Thickened", "Swollen", "Constricted"]
 
 def process_image(img, interactive=False):
     start = timeit.default_timer()
-    bin_img, skel, dist_map = preprocess_img(img, THRESHOLD, UP_FACTOR)
+    morph = ImageMorphology(img, THRESHOLD, UP_FACTOR)
+    bin_img = morph.binary_image
+    skel = morph.skeleton
+
     end = timeit.default_timer()
     print("Preprocessing: {:.1f} ms".format(1000. * (end - start)))
 
@@ -44,14 +44,14 @@ def process_image(img, interactive=False):
         centre = (skel_idx[1][centre_idx], skel_idx[0][centre_idx])
         radius = arg[2]  # (2. * dist_map[centre[::-1]])
         op_img = op(bin_img, arg[0], centre, radius)
-        patho_img = transform.pyramid_reduce(op_img, downscale=UP_FACTOR)
+        patho_img = transform.pyramid_reduce(op_img, downscale=UP_FACTOR)  # type: np.ndarray
         if interactive:
             plot_digit(op_img, axs[1, 1], name)
             plot_digit(patho_img, axs[0, 1], name)
             plot_ellipse(*centre, 0, radius, radius, axs[1, 1], ec='r', fc='None', lw=1)
     else:
         op_img = op(bin_img, *arg)
-        patho_img = transform.pyramid_reduce(op_img, downscale=UP_FACTOR)
+        patho_img = transform.pyramid_reduce(op_img, downscale=UP_FACTOR)  # type: np.ndarray
         if interactive:
             plot_digit(op_img, axs[1, 1], name)
             plot_digit(patho_img, axs[0, 1], name)

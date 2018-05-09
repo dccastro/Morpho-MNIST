@@ -6,13 +6,14 @@ import torch
 import torchvision
 from skimage import transform
 
-from morpho import preprocess_img
+from morpho import ImageMorphology
 from operations import op_power, op_thicken, op_thin
 from util import plot_digit, plot_ellipse
 
 DATA_ROOT = "../data/mnist"
 THRESHOLD = 128
 UP_FACTOR = 4
+
 
 if __name__ == '__main__':
     transf = torchvision.transforms.ToTensor()
@@ -30,7 +31,9 @@ if __name__ == '__main__':
     for n in torch.randperm(len(train_set.train_data)):
         start = timeit.default_timer()
         img = train_set.train_data[n].squeeze().numpy()
-        bin_img, skel, dist_map = preprocess_img(img, THRESHOLD, UP_FACTOR)
+        morph = ImageMorphology(img, THRESHOLD, UP_FACTOR)
+        bin_img = morph.binary_image
+        skel = morph.skeleton
         end = timeit.default_timer()
         print("Preprocessing: {:.1f} ms".format(1000. * (end - start)))
 
