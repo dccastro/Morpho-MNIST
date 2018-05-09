@@ -41,3 +41,47 @@ class ImageMorphology(object):
         return 2. * np.median(self.distance_map[self.skeleton]) / self.upscale
 
 
+class ImageMoments(object):
+    def __init__(self, img: np.ndarray):
+        img = img.astype(float)
+        x = np.arange(img.shape[1])[None, :]
+        y = np.arange(img.shape[0])[:, None]
+        m00 = img.sum()
+        m10 = (x * img).sum() / m00
+        m01 = (y * img).sum() / m00
+        m20 = (x ** 2 * img).sum() / m00
+        m11 = (x * y * img).sum() / m00
+        m02 = (y ** 2 * img).sum() / m00
+        self.m00 = m00
+        self.m10 = m10
+        self.m01 = m01
+        self.u20 = m20 - m10 ** 2
+        self.u11 = m11 - m10 * m01
+        self.u02 = m02 - m01 ** 2
+
+    @property
+    def centroid(self):
+        return self.m10, self.m01
+
+    @property
+    def covariance(self):
+        return self.u20, self.u11, self.u02
+
+    @property
+    def axis_lengths(self):
+        delta = .5 * np.hypot(2. * self.u11, self.u20 - self.u02)
+        eig1 = .5 * (self.u20 + self.u02) + delta
+        eig2 = .5 * (self.u20 + self.u02) - delta
+        return np.sqrt(eig1), np.sqrt(eig2)
+
+    @property
+    def angle(self):
+        return .5 * np.arctan2(2. * self.u11, self.u20 - self.u02)
+
+    @property
+    def horizontal_shear(self):
+        return self.u11 / self.u02
+
+    @property
+    def vertical_shear(self):
+        return self.u11 / self.u20
