@@ -13,7 +13,9 @@ def plot_digit(x, ax=None, title=None, **kwargs):
         ax = plt.gca()
     if isinstance(x, Variable):
         x = x.data
-    ax.imshow(x.squeeze(), cmap='gray_r', **kwargs)
+    def_kwargs = dict(cmap='gray_r')
+    def_kwargs.update(**kwargs)
+    ax.imshow(x.squeeze(), **def_kwargs)
     ax.xaxis.set_visible(False)
     ax.yaxis.set_visible(False)
     if title is not None:
