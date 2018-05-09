@@ -1,5 +1,8 @@
 import numpy as np
+from scipy.ndimage import filters
 from skimage import morphology, transform
+
+_SKEL_LEN_MASK = np.array([[0., 0., 0.], [0., 0., 1.], [np.sqrt(2.), 1., np.sqrt(2.)]])
 
 
 class ImageMorphology(object):
@@ -16,7 +19,9 @@ class ImageMorphology(object):
 
     @property
     def stroke_length(self):
-        return self.skeleton.sum() / self.upscale
+        skel = self.skeleton.astype(float)
+        conv = filters.correlate(skel, _SKEL_LEN_MASK, mode='constant')
+        return np.einsum('ij,ij->', conv, skel) / self.upscale
 
     @property
     def mean_thickness(self):
