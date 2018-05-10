@@ -5,9 +5,9 @@ from skimage import morphology, transform
 _SKEL_LEN_MASK = np.array([[0., 0., 0.], [0., 0., 1.], [np.sqrt(2.), 1., np.sqrt(2.)]])
 
 
-def _process_img_morph(img, threshold=128, upscale=1):
-    if upscale > 1:
-        up_img = transform.pyramid_expand(img, upscale=upscale, order=3)  # type: np.ndarray
+def _process_img_morph(img, threshold=128, scale=1):
+    if scale > 1:
+        up_img = transform.pyramid_expand(img, upscale=scale, order=3)  # type: np.ndarray
         img = (255. * up_img).astype(img.dtype)
     bin_img = (img >= threshold)
     skel, dist_map = morphology.medial_axis(bin_img, return_distance=True)
@@ -15,30 +15,33 @@ def _process_img_morph(img, threshold=128, upscale=1):
 
 
 class ImageMorphology(object):
-    def __init__(self, image: np.ndarray, threshold: int = 128, upscale: int = 1):
+    def __init__(self, image: np.ndarray, threshold: int = 128, scale: int = 1):
         self.image = image
         self.threshold = threshold
-        self.upscale = upscale
+        self.scale = scale
         self.hires_image, self.binary_image, self.skeleton, self.distance_map = \
-            _process_img_morph(self.image, self.threshold, self.upscale)
+            _process_img_morph(self.image, self.threshold, self.scale)
 
     @property
     def area(self):
-        return self.binary_image.sum() / self.upscale ** 2
+        return self.binary_image.sum() / self.scale ** 2
 
     @property
     def stroke_length(self):
         skel = self.skeleton.astype(float)
         conv = filters.correlate(skel, _SKEL_LEN_MASK, mode='constant')
-        return np.einsum('ij,ij->', conv, skel) / self.upscale
+        return np.einsum('ij,ij->', conv, skel) / self.scale
 
     @property
     def mean_thickness(self):
-        return 2. * np.mean(self.distance_map[self.skeleton]) / self.upscale
+        return 2. * np.mean(self.distance_map[self.skeleton]) / self.scale
 
     @property
     def median_thickness(self):
-        return 2. * np.median(self.distance_map[self.skeleton]) / self.upscale
+        return 2. * np.median(self.distance_map[self.skeleton]) / self.scale
+
+    def downscale(self, image):
+        return transform.pyramid_reduce(image, downscale=self.scale, order=3)
 
 
 class ImageMoments(object):
