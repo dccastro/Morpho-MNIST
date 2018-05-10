@@ -88,3 +88,44 @@ class ImageMoments(object):
     @property
     def vertical_shear(self):
         return self.u11 / self.u20
+
+
+def _horz_cdf(img: np.ndarray, shear: float, x: np.ndarray, y: np.ndarray, y_mid):
+    locs = np.arange(0, img.shape[1], step=1)
+    counts = np.zeros(len(locs))
+    for i, t in enumerate(locs):
+        counts[i] = ((x + .5 < t + shear * (y - y_mid)) * img).sum()
+    return locs, counts / img.sum()
+
+
+def _vert_cdf(img: np.ndarray, y: np.ndarray):
+    counts = np.zeros(img.shape[0])
+    for t in range(img.shape[0]):
+        counts[t] = ((y < t) * img).sum()
+    return counts / img.sum()
+
+
+def bounding_parallelogram(img: np.ndarray, frac: float, moments: ImageMoments = None):
+    height, width = img.shape
+    img = img.astype(float)
+    x = np.arange(width)[None, :]
+    y = np.arange(height)[:, None]
+
+    if moments is None:
+        moments = ImageMoments(img)
+    middle = moments.centroid[1]
+    shear = moments.horizontal_shear
+
+    hloc, hcdf = _horz_cdf(img, shear, x, y, middle)
+    vcdf = _vert_cdf(img, y)
+
+    frac /= 2  # two-sided
+    left, right = np.interp([frac, 1. - frac], hcdf, hloc)
+    top, bottom = np.interp([frac, 1. - frac], vcdf, np.arange(len(vcdf)))
+
+    top_left = np.array([left + shear * (top - middle), top])
+    top_right = np.array([right + shear * (top - middle), top])
+    bottom_left = np.array([left + shear * (bottom - middle), bottom])
+    bottom_right = np.array([right + shear * (bottom - middle), bottom])
+
+    return top_left, top_right, bottom_right, bottom_left
