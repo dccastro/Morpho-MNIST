@@ -23,8 +23,17 @@ def plot_digit(x, ax=None, title=None, **kwargs):
 
 
 def plot_ellipse(x, y, angle, major, minor, ax, **kwargs):
-    ax.add_patch(Ellipse(xy=(x, y), width=2 * major, height=2 * minor, angle=np.rad2deg(angle),
-                         **kwargs))
+    if ax is None:
+        ax = plt.gca()
+    ax.add_patch(Ellipse(xy=(x, y), width=2 * major, height=2 * minor,
+                         angle=np.rad2deg(angle), **kwargs))
+
+
+def plot_parallelogram(top_left, top_right, bottom_right, bottom_left, scale=1., ax=None, **kwargs):
+    if ax is None:
+        ax = plt.gca()
+    corners = [top_left, top_right, bottom_right, bottom_left, top_left]
+    ax.plot(*(scale * np.array(corners).T - .5), **kwargs)
 
 
 def save(data, path):
