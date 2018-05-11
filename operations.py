@@ -96,62 +96,6 @@ def _power_fwd(xy_, strength, centre, radius):
     return _power_bkd(xy_, 1. / strength, centre, radius)
 
 
-def op_sphere(img, strength, centre, radius):
-    return transform.warp(img, lambda xy: _sphere_fwd(xy, strength, centre, radius))
-
-
-def _sphere_bkd(xy, strength, c, R0):
-    if strength >= 1.:
-        raise ValueError("strength must be < 1")
-    c = np.array(c)
-    xy = xy - c
-    r = np.hypot(*xy.T) + np.finfo(float).eps
-    gamma = strength * np.pi / 2
-    R = R0 / np.sin(gamma)
-    alpha = np.arcsin(r / R)
-    r_ = alpha / gamma * R0 / r
-    xy_ = r_[:, None] * xy
-    xy_[r > R0] = xy[r > R0]
-    return c + xy_
-
-
-def _sphere_radial_bkd(r, strength):
-    if strength >= 1.:
-        raise ValueError("strength must be < 1")
-    gamma = strength * np.pi / 2
-    R = 1. / np.sin(gamma)
-    alpha = np.arcsin(r / R)
-    r_ = alpha / (r * gamma)
-    r_[r > 1.] = 1.
-    return r_
-
-
-def _sphere_radial_fwd(r_, strength):
-    if strength >= 1.:
-        raise ValueError("strength must be < 1")
-    gamma = strength * np.pi / 2
-    R = 1. / np.sin(gamma)
-    alpha = r_ * gamma
-    r = np.sin(alpha) * R / r_
-    r[r_ > 1.] = 1.
-    return r
-
-
-def _sphere_fwd(xy_, strength, c, R0):
-    if strength >= 1.:
-        raise ValueError("strength must be < 1")
-    c = np.array(c)
-    xy_ = xy_ - c
-    r_ = np.hypot(*xy_.T) + np.finfo(float).eps
-    gamma = strength * np.pi / 2
-    R = R0 / np.sin(gamma)
-    alpha = r_ / R0 * gamma
-    r = np.sin(alpha) * R / r_
-    xy = r[:, None] * xy_
-    xy[r_ > R0] = xy_[r_ > R0]
-    return c + xy
-
-
 if __name__ == '__main__':
     x = np.arange(40)
     y = np.arange(40)
