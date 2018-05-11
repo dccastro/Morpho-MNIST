@@ -5,7 +5,7 @@ from morpho import ImageMorphology
 
 
 class Operator(object):
-    def __call__(self, morpho: ImageMorphology) -> np.ndarray:
+    def __call__(self, morph: ImageMorphology) -> np.ndarray:
         raise NotImplementedError
 
 
@@ -14,8 +14,8 @@ class ThinOperator(Operator):
         self.amount = amount
         self._selem = morphology.disk(self.amount)
 
-    def __call__(self, morpho: ImageMorphology):
-        return morphology.erosion(morpho.binary_image, self._selem)
+    def __call__(self, morph: ImageMorphology):
+        return morphology.erosion(morph.binary_image, self._selem)
 
 
 class ThickenOperator(Operator):
@@ -23,8 +23,8 @@ class ThickenOperator(Operator):
         self.amount = amount
         self._selem = morphology.disk(self.amount)
 
-    def __call__(self, morpho: ImageMorphology):
-        return morphology.dilation(morpho.binary_image, self._selem)
+    def __call__(self, morph: ImageMorphology):
+        return morphology.dilation(morph.binary_image, self._selem)
 
 
 class DeformationOperator(Operator):
@@ -33,8 +33,8 @@ class DeformationOperator(Operator):
         self.args = args
         self.kwargs = kwargs
 
-    def __call__(self, morpho: ImageMorphology):
-        return transform.warp(morpho.binary_image,
+    def __call__(self, morph: ImageMorphology):
+        return transform.warp(morph.binary_image,
                               lambda xy: self.warp_fn(xy, *self.args, **self.kwargs))
 
 
@@ -42,12 +42,12 @@ class RandomLocationOperator(Operator):
     def __init__(self, def_op: DeformationOperator):
         self.def_op = def_op
 
-    def __call__(self, morpho: ImageMorphology):
-        skel_idx = np.where(morpho.skeleton)
+    def __call__(self, morph: ImageMorphology):
+        skel_idx = np.where(morph.skeleton)
         centre_idx = np.random.choice(len(skel_idx[0]))
         centre = (skel_idx[1][centre_idx], skel_idx[0][centre_idx])
         self.def_op.kwargs['centre'] = centre
-        return self.def_op(morpho)
+        return self.def_op(morph)
 
 
 def op_thin(img, strength):
