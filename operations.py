@@ -4,6 +4,12 @@ from skimage import morphology, transform
 from morpho import ImageMorphology
 
 
+def _sample_coords(skel):
+    coords = np.array(np.where(skel)).T
+    centre_idx = np.random.choice(coords.shape[0])
+    return coords[centre_idx]
+
+
 class Operator(object):
     def __call__(self, morph: ImageMorphology) -> np.ndarray:
         raise NotImplementedError
@@ -28,14 +34,28 @@ class ThickenOperator(Operator):
 
 
 class DeformationOperator(Operator):
-    def __init__(self, warp_fn, *args, **kwargs):
-        self.warp_fn = warp_fn
-        self.args = args
-        self.kwargs = kwargs
-
     def __call__(self, morph: ImageMorphology):
-        return transform.warp(morph.binary_image,
-                              lambda xy: self.warp_fn(xy, *self.args, **self.kwargs))
+        return transform.warp(morph.binary_image, lambda xy: self.warp(xy, morph))
+
+    def warp(self, xy: np.ndarray, morph: ImageMorphology):
+        raise NotImplementedError
+
+
+class SwellOperator(DeformationOperator):
+    def __init__(self, strength: float, radius: float):
+        self.strength = strength
+        self.radius = radius
+
+    def warp(self, xy: np.ndarray, morph: ImageMorphology):
+        centre = _sample_coords(morph.skeleton)[::-1]
+        radius = self.radius * morph.scale
+
+        offset_xy = xy - centre
+        distance = np.hypot(*offset_xy.T)
+        weight = (distance / radius) ** (self.strength - 1)
+        weight[distance > radius] = 1.
+        return centre + weight[:, None] * offset_xy
+
 
 
 class RandomLocationOperator(Operator):
