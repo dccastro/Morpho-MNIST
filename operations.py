@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import numpy as np
 from skimage import draw, morphology, transform
 
@@ -97,6 +99,15 @@ class FractureOperator(Operator):
         ii, jj = draw.line(*p0, *p1)
         for i, j in zip(ii, jj):
             img[i:i + h, j:j + w] &= brush
+
+
+class RandomOperator(Operator):
+    def __init__(self, ops: Sequence[Operator]):
+        self.ops = ops
+
+    def __call__(self, morph: ImageMorphology):
+        op = np.random.choice(self.ops)
+        return op(morph)
 
 
 def op_thin(img, strength):
