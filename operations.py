@@ -18,19 +18,19 @@ class Operator(object):
 class ThinOperator(Operator):
     def __init__(self, amount):
         self.amount = amount
-        self._selem = morphology.disk(self.amount)
 
     def __call__(self, morph: ImageMorphology):
-        return morphology.erosion(morph.binary_image, self._selem)
+        radius = int(self.amount * morph.scale)
+        return morphology.erosion(morph.binary_image, morphology.disk(radius))
 
 
 class ThickenOperator(Operator):
     def __init__(self, amount):
         self.amount = amount
-        self._selem = morphology.disk(self.amount)
 
     def __call__(self, morph: ImageMorphology):
-        return morphology.dilation(morph.binary_image, self._selem)
+        radius = int(self.amount * morph.scale)
+        return morphology.dilation(morph.binary_image, morphology.disk(radius))
 
 
 class DeformationOperator(Operator):
