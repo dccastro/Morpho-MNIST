@@ -1,6 +1,7 @@
 import numpy as np
-from skimage import morphology, transform
+from skimage import draw, morphology, transform
 
+import skeleton
 from morpho import ImageMorphology
 
 
@@ -57,17 +58,45 @@ class SwellOperator(DeformationOperator):
         return centre + weight[:, None] * offset_xy
 
 
+class FractureOperator(Operator):
+    _ANGLE_WINDOW = 2
+    _FRAC_EXTENSION = .5
 
-class RandomLocationOperator(Operator):
-    def __init__(self, def_op: DeformationOperator):
-        self.def_op = def_op
+    def __init__(self, thickness: float = 1.5, prune: float = 2, num_frac: int = 1):
+        self.thickness = thickness
+        self.prune = prune
+        self.num_frac = num_frac
 
     def __call__(self, morph: ImageMorphology):
-        skel_idx = np.where(morph.skeleton)
-        centre_idx = np.random.choice(len(skel_idx[0]))
-        centre = (skel_idx[1][centre_idx], skel_idx[0][centre_idx])
-        self.def_op.kwargs['centre'] = centre
-        return self.def_op(morph)
+        skel = morph.skeleton
+        up_prune = self.prune * morph.scale
+        pruned = skeleton.erase(skel, skeleton.num_neighbours(skel) == 1, up_prune)
+        forked = skeleton.erase(pruned, skeleton.num_neighbours(pruned) == 3, up_prune)
+
+        up_thickness = self.thickness * morph.scale
+        r = int(np.ceil((up_thickness - 1) / 2))
+        brush = ~morphology.disk(r).astype(bool)
+        frac_img = np.pad(morph.binary_image, pad_width=r, mode='constant', constant_values=False)
+        for _ in range(self.num_frac):
+            centre = _sample_coords(forked)
+            p0, p1 = self._endpoints(skel, morph, centre)
+            self._draw_line(frac_img, p0, p1, brush)
+        return frac_img[r:-r, r:-r]
+
+    def _endpoints(self, skel, morph, centre):
+        angle = skeleton.get_angle(skel, *centre, self._ANGLE_WINDOW * morph.scale)
+        length = morph.distance_map[centre[0], centre[1]] + self._FRAC_EXTENSION * morph.scale
+        normal = length * np.array([np.cos(angle), -np.sin(angle)])
+        p0 = (centre + normal).astype(int)
+        p1 = (centre - normal).astype(int)
+        return p0, p1
+
+    @staticmethod
+    def _draw_line(img, p0, p1, brush):
+        h, w = brush.shape
+        ii, jj = draw.line(*p0, *p1)
+        for i, j in zip(ii, jj):
+            img[i:i + h, j:j + w] &= brush
 
 
 def op_thin(img, strength):
