@@ -1,4 +1,7 @@
+import multiprocessing
+
 import numpy as np
+import pandas as pd
 from scipy.ndimage import filters
 from skimage import morphology, transform
 
@@ -130,3 +133,48 @@ def bounding_parallelogram(img: np.ndarray, frac: float, moments: ImageMoments =
     bottom_right = np.array([right + shear * (bottom - middle), bottom])
 
     return top_left, top_right, bottom_right, bottom_left
+
+
+def measure_image(img: np.ndarray, threshold: int = 128, scale: int = 4, bound_frac: float = .02,
+                  verbose=True):
+    morph = ImageMorphology(img, threshold, scale)
+    moments = ImageMoments(morph.hires_image)
+    mean_thck = morph.mean_thickness
+    area = morph.area
+    length = morph.stroke_length
+    slant = np.arctan(-moments.horizontal_shear)
+
+    corners = bounding_parallelogram(morph.hires_image, bound_frac, moments)
+    width = (corners[1][0] - corners[0][0]) / morph.scale
+    height = (corners[-1][1] - corners[0][1]) / morph.scale
+
+    if verbose:
+        print("Thickness: {:.2f}".format(mean_thck))
+        print("Length: {:.1f}".format(length))
+        print("Slant: {:.0f}°".format(np.rad2deg(slant)))
+        print("Dimensions: {:.1f} x {:.1f}".format(width, height))
+        print()
+
+    return area, length, mean_thck, slant, width, height
+
+
+def measure_batch(images: np.ndarray, threshold: int = 128, scale: int = 4, bound_frac: float = .02,
+                  verbose=False, pool: multiprocessing.Pool = None, chunksize: int = 1000):
+    args = ((img, threshold, scale, bound_frac, verbose) for img in images)
+    if pool is None:
+        results = [measure_image(*arg) for arg in args]
+    else:
+        results = pool.starmap(measure_image, args, chunksize=chunksize)
+    columns = ['area', 'length', 'thickness', 'slant', 'width', 'height']
+    df = pd.DataFrame(results, columns=columns)
+    return df
+
+
+if __name__ == '__main__':
+    import util
+
+    data = util.load("data/mnist/patho/t10k-images-idx3-ubyte.gz")[:100]
+    with multiprocessing.Pool() as pool:
+        df = measure_batch(data, pool=pool, chunksize=10)
+    print(df.head())
+    print(measure_batch(data).head())
