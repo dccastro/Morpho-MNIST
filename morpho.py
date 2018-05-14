@@ -41,7 +41,8 @@ class ImageMorphology(object):
         return 2. * np.median(self.distance_map[self.skeleton]) / self.scale
 
     def downscale(self, image):
-        return transform.pyramid_reduce(image, downscale=self.scale, order=3)
+        down_img = transform.pyramid_reduce(image, downscale=self.scale, order=3)  # type: np.ndarray
+        return (255. * down_img).astype(np.uint8)
 
 
 class ImageMoments(object):
