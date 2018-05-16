@@ -12,6 +12,8 @@ def load_uint8(f):
 
 
 def save_uint8(data, f):
+    if data.dtype is not np.uint8:
+        data = data.astype(np.uint8)
     f.write(struct.pack('BBBB', 0, 0, 0x08, data.ndim))
     f.write(struct.pack('>' + 'I' * data.ndim, *data.shape))
     f.write(data.tobytes())
