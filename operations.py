@@ -23,7 +23,7 @@ class ThinOperator(Operator):
         self.amount = amount
 
     def __call__(self, morph: ImageMorphology):
-        radius = int(self.amount * morph.scale)
+        radius = int(self.amount * morph.scale * morph.mean_thickness / 2.)
         return morphology.erosion(morph.binary_image, morphology.disk(radius))
 
 
@@ -32,7 +32,7 @@ class ThickenOperator(Operator):
         self.amount = amount
 
     def __call__(self, morph: ImageMorphology):
-        radius = int(self.amount * morph.scale)
+        radius = int(self.amount * morph.scale * morph.mean_thickness / 2.)
         return morphology.dilation(morph.binary_image, morphology.disk(radius))
 
 
@@ -51,7 +51,7 @@ class SwellOperator(DeformationOperator):
 
     def warp(self, xy: np.ndarray, morph: ImageMorphology):
         centre = _sample_coords(morph.skeleton)[::-1]
-        radius = self.radius * morph.scale
+        radius = (self.radius * np.sqrt(morph.mean_thickness) / 2.) * morph.scale
 
         offset_xy = xy - centre
         distance = np.hypot(*offset_xy.T)
