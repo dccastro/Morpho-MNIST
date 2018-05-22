@@ -3,7 +3,6 @@ import gzip
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Ellipse
-from torch.autograd import Variable
 
 from morphomnist import idx
 
@@ -11,8 +10,6 @@ from morphomnist import idx
 def plot_digit(x, ax=None, title=None, **kwargs):
     if ax is None:
         ax = plt.gca()
-    if isinstance(x, Variable):
-        x = x.data
     def_kwargs = dict(cmap='gray_r')
     def_kwargs.update(**kwargs)
     ax.imshow(x.squeeze(), **def_kwargs)
