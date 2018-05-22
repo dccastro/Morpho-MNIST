@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.patches import Ellipse
 from torch.autograd import Variable
 
-import idx
+from morphomnist import idx
 
 
 def plot_digit(x, ax=None, title=None, **kwargs):

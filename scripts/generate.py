@@ -69,7 +69,7 @@ def process_image(img, interactive=False):
 if __name__ == '__main__':
     import multiprocessing
     import os
-    import idx
+    from morphomnist import idx
 
     filenames = ["train-images-idx3-ubyte", "t10k-images-idx3-ubyte"]
 
