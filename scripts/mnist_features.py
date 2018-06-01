@@ -1,8 +1,7 @@
 import multiprocessing
 import os
 
-import morpho
-import util
+from morphomnist import morpho, util
 
 if __name__ == '__main__':
     until = 10

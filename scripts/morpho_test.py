@@ -6,9 +6,9 @@ import torch
 import torchvision
 from skimage import transform
 
-from morpho import ImageMorphology
-from operations import op_power, op_thicken, op_thin
-from util import plot_digit, plot_ellipse
+from morphomnist.morpho import ImageMorphology
+from morphomnist.operations import op_power, op_thicken, op_thin
+from morphomnist.util import plot_digit, plot_ellipse
 
 DATA_ROOT = "../data/mnist"
 THRESHOLD = 128
