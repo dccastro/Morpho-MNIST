@@ -4,7 +4,7 @@ import numpy as np
 from scipy.ndimage import filters
 from skimage import morphology
 
-from .morpho import ImageMoments
+from .morpho import ImageMoments, ImageMorphology
 
 _NB_MASK = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]], int)
 
@@ -61,3 +61,23 @@ def erase(skel, seeds, r):
     for i, j in zip(*np.where(seeds)):
         erased[i:i + 2*r+1, j:j + 2*r+1] &= brush
     return erased[r:-r, r:-r]
+
+
+class LocationSampler(object):
+    def __init__(self, prune_tips: float = None, prune_forks: float = None):
+        self.prune_tips = prune_tips
+        self.prune_forks = prune_forks
+
+    def sample(self, morph: ImageMorphology, num: int = None):
+        skel = morph.skeleton
+
+        if self.prune_tips is not None:
+            up_prune = int(self.prune_tips * morph.scale)
+            skel = erase(skel, num_neighbours(skel) == 1, up_prune)
+        if self.prune_forks is not None:
+            up_prune = int(self.prune_tips * morph.scale)
+            skel = erase(skel, num_neighbours(skel) == 3, up_prune)
+
+        coords = np.array(np.where(skel)).T
+        centre_idx = np.random.choice(coords.shape[0], size=num)
+        return coords[centre_idx]

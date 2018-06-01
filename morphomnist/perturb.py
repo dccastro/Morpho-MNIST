@@ -7,12 +7,6 @@ from . import skeleton
 from .morpho import ImageMorphology
 
 
-def _sample_coords(skel):
-    coords = np.array(np.where(skel)).T
-    centre_idx = np.random.choice(coords.shape[0])
-    return coords[centre_idx]
-
-
 class Perturbation(object):
     def __call__(self, morph: ImageMorphology) -> np.ndarray:
         raise NotImplementedError
@@ -48,9 +42,10 @@ class Swelling(Deformation):
     def __init__(self, strength: float, radius: float):
         self.strength = strength
         self.radius = radius
+        self.loc_sampler = skeleton.LocationSampler()
 
     def warp(self, xy: np.ndarray, morph: ImageMorphology):
-        centre = _sample_coords(morph.skeleton)[::-1]
+        centre = self.loc_sampler.sample(morph)[::-1]
         radius = (self.radius * np.sqrt(morph.mean_thickness) / 2.) * morph.scale
 
         offset_xy = xy - centre
@@ -68,25 +63,20 @@ class Fracture(Perturbation):
         self.thickness = thickness
         self.prune = prune
         self.num_frac = num_frac
+        self.loc_sampler = skeleton.LocationSampler(prune, prune)
 
     def __call__(self, morph: ImageMorphology):
-        skel = morph.skeleton
-        up_prune = self.prune * morph.scale
-        pruned = skeleton.erase(skel, skeleton.num_neighbours(skel) == 1, up_prune)
-        forked = skeleton.erase(pruned, skeleton.num_neighbours(pruned) == 3, up_prune)
-
         up_thickness = self.thickness * morph.scale
         r = int(np.ceil((up_thickness - 1) / 2))
         brush = ~morphology.disk(r).astype(bool)
         frac_img = np.pad(morph.binary_image, pad_width=r, mode='constant', constant_values=False)
-        for _ in range(self.num_frac):
-            centre = _sample_coords(forked)
-            p0, p1 = self._endpoints(skel, morph, centre)
+        for centre in self.loc_sampler.sample(morph, self.num_frac):
+            p0, p1 = self._endpoints(morph, centre)
             self._draw_line(frac_img, p0, p1, brush)
         return frac_img[r:-r, r:-r]
 
-    def _endpoints(self, skel, morph, centre):
-        angle = skeleton.get_angle(skel, *centre, self._ANGLE_WINDOW * morph.scale)
+    def _endpoints(self, morph, centre):
+        angle = skeleton.get_angle(morph.skeleton, *centre, self._ANGLE_WINDOW * morph.scale)
         length = morph.distance_map[centre[0], centre[1]] + self._FRAC_EXTENSION * morph.scale
         angle += np.pi / 2.  # Perpendicular to the skeleton
         normal = length * np.array([np.sin(angle), np.cos(angle)])
