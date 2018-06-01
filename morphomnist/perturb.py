@@ -13,12 +13,12 @@ def _sample_coords(skel):
     return coords[centre_idx]
 
 
-class Operator(object):
+class Perturbation(object):
     def __call__(self, morph: ImageMorphology) -> np.ndarray:
         raise NotImplementedError
 
 
-class ThinOperator(Operator):
+class Thinning(Perturbation):
     def __init__(self, amount):
         self.amount = amount
 
@@ -27,7 +27,7 @@ class ThinOperator(Operator):
         return morphology.erosion(morph.binary_image, morphology.disk(radius))
 
 
-class ThickenOperator(Operator):
+class Thickening(Perturbation):
     def __init__(self, amount):
         self.amount = amount
 
@@ -36,7 +36,7 @@ class ThickenOperator(Operator):
         return morphology.dilation(morph.binary_image, morphology.disk(radius))
 
 
-class DeformationOperator(Operator):
+class Deformation(Perturbation):
     def __call__(self, morph: ImageMorphology):
         return transform.warp(morph.binary_image, lambda xy: self.warp(xy, morph))
 
@@ -44,7 +44,7 @@ class DeformationOperator(Operator):
         raise NotImplementedError
 
 
-class SwellOperator(DeformationOperator):
+class Swelling(Deformation):
     def __init__(self, strength: float, radius: float):
         self.strength = strength
         self.radius = radius
@@ -60,7 +60,7 @@ class SwellOperator(DeformationOperator):
         return centre + weight[:, None] * offset_xy
 
 
-class FractureOperator(Operator):
+class Fracture(Perturbation):
     _ANGLE_WINDOW = 2
     _FRAC_EXTENSION = .5
 
@@ -102,8 +102,8 @@ class FractureOperator(Operator):
             img[i:i + h, j:j + w] &= brush
 
 
-class RandomOperator(Operator):
-    def __init__(self, ops: Sequence[Operator]):
+class RandomPerturbation(Perturbation):
+    def __init__(self, ops: Sequence[Perturbation]):
         self.ops = ops
 
     def __call__(self, morph: ImageMorphology):
