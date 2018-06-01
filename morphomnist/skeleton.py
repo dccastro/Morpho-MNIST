@@ -4,7 +4,7 @@ import numpy as np
 from scipy.ndimage import filters
 from skimage import morphology
 
-from morpho import ImageMoments
+from .morpho import ImageMoments
 
 _NB_MASK = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]], int)
 

@@ -3,8 +3,8 @@ from typing import Sequence
 import numpy as np
 from skimage import draw, morphology, transform
 
-import skeleton
-from morpho import ImageMorphology
+from . import skeleton
+from .morpho import ImageMorphology
 
 
 def _sample_coords(skel):

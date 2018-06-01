@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Ellipse
 
-from morphomnist import idx
+from . import idx
 
 
 def plot_digit(x, ax=None, title=None, **kwargs):
