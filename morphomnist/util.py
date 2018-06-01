@@ -19,6 +19,21 @@ def plot_digit(x, ax=None, title=None, **kwargs):
         ax.set_title(title)
 
 
+def plot_grid(imgs, nrow=None, **kwargs):
+    num = imgs.shape[0]
+    if nrow is None:
+        nrow = int(np.floor(np.sqrt(num)))
+    ncol = int(np.ceil(num / nrow))
+    fig, axs = plt.subplots(nrow, ncol, **kwargs)
+    axs = np.atleast_1d(axs).T
+    for i in range(num):
+        ax = axs.flat[i]
+        plot_digit(imgs[i], ax)
+        ax.axis('off')
+    for ax in axs.flat[num:]:
+        ax.set_visible(False)
+
+
 def plot_ellipse(x, y, angle, major, minor, ax, **kwargs):
     if ax is None:
         ax = plt.gca()
