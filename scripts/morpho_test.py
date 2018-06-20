@@ -11,7 +11,7 @@ from morphomnist.perturb import op_power, op_thicken, op_thin
 from morphomnist.util import plot_digit, plot_ellipse
 
 DATA_ROOT = "../data/mnist"
-THRESHOLD = 128
+THRESHOLD = .5
 UP_FACTOR = 4
 
 

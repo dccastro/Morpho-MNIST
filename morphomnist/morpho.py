@@ -8,17 +8,18 @@ from skimage import morphology, transform
 _SKEL_LEN_MASK = np.array([[0., 0., 0.], [0., 0., 1.], [np.sqrt(2.), 1., np.sqrt(2.)]])
 
 
-def _process_img_morph(img, threshold=128, scale=1):
+def _process_img_morph(img, threshold=.5, scale=1):
     if scale > 1:
         up_img = transform.pyramid_expand(img, upscale=scale, order=3)  # type: np.ndarray
         img = (255. * up_img).astype(img.dtype)
-    bin_img = (img >= threshold)
+    img_min, img_max = img.min(), img.max()
+    bin_img = (img >= img_min + (img_max - img_min) * threshold)
     skel, dist_map = morphology.medial_axis(bin_img, return_distance=True)
     return img, bin_img, skel, dist_map
 
 
 class ImageMorphology(object):
-    def __init__(self, image: np.ndarray, threshold: int = 128, scale: int = 1):
+    def __init__(self, image: np.ndarray, threshold: float = .5, scale: int = 1):
         self.image = image
         self.threshold = threshold
         self.scale = scale
@@ -135,7 +136,7 @@ def bounding_parallelogram(img: np.ndarray, frac: float, moments: ImageMoments =
     return top_left, top_right, bottom_right, bottom_left
 
 
-def measure_image(img: np.ndarray, threshold: int = 128, scale: int = 4, bound_frac: float = .02,
+def measure_image(img: np.ndarray, threshold: float = .5, scale: int = 4, bound_frac: float = .02,
                   verbose=True):
     morph = ImageMorphology(img, threshold, scale)
     moments = ImageMoments(morph.hires_image)
@@ -158,8 +159,9 @@ def measure_image(img: np.ndarray, threshold: int = 128, scale: int = 4, bound_f
     return area, length, mean_thck, slant, width, height
 
 
-def measure_batch(images: np.ndarray, threshold: int = 128, scale: int = 4, bound_frac: float = .02,
+def measure_batch(images: np.ndarray, threshold: float = .5, scale: int = 4, bound_frac: float = .02,
                   verbose=False, pool: multiprocessing.Pool = None, chunksize: int = 1000):
+    # TODO: Report progress (e.g. using pool.imap variants)
     args = ((img, threshold, scale, bound_frac, verbose) for img in images)
     if pool is None:
         results = [measure_image(*arg) for arg in args]
