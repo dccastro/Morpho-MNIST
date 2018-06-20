@@ -1,96 +1,57 @@
 import timeit
+import multiprocessing
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from skimage import transform
 
+from morphomnist import idx, perturb, util
 from morphomnist.morpho import ImageMorphology
-from morphomnist.perturb import op_power, op_thicken, op_thin
-from morphomnist.util import plot_digit, plot_ellipse
 
 DATA_ROOT = "../data/mnist"
 THRESHOLD = .5
 UP_FACTOR = 4
 
-OPS = [op_thin, op_thicken, op_power, op_power]
-OP_ARGS = [(int(.8 * UP_FACTOR),),
-           (int(.8 * UP_FACTOR),),
-           (5, np.array([14, 14]) * UP_FACTOR, 4 * UP_FACTOR),
-           (.2, np.array([14, 14]) * UP_FACTOR, 4 * UP_FACTOR)]
-OP_NAMES = ["Thinned", "Thickened", "Swollen", "Constricted"]
+PERTS = [
+    perturb.Thinning(.7),
+    perturb.Thickening(1.),
+    perturb.Swelling(3, 7),
+    perturb.Fracture(num_frac=3)
+]
 
 
-def process_image(img, interactive=False):
+def process_image(i, img):
+    np.random.seed()
     start = timeit.default_timer()
     morph = ImageMorphology(img, THRESHOLD, UP_FACTOR)
-    bin_img = morph.binary_image
-    skel = morph.skeleton
-
+    pert_idx = np.random.choice(len(PERTS))
+    pert_img_hires = PERTS[pert_idx](morph)
+    pert_img = morph.downscale(pert_img_hires)
     end = timeit.default_timer()
-    print("Preprocessing: {:.1f} ms".format(1000. * (end - start)))
-
-    if interactive:
-        fig, axs = plt.subplots(2, 2, figsize=(6, 6))
-        plot_digit(img, axs[0, 0], "Original")
-        plot_digit(bin_img, axs[1, 0], "Thresholded")
-
-    i = np.random.randint(len(OPS))
-    op, arg, name = OPS[i], OP_ARGS[i], OP_NAMES[i]
-    # for i, (op, arg, name) in enumerate(zip(ops, op_args, op_names)):
-    start = timeit.default_timer()
-    if op is op_power:
-        skel_idx = np.where(skel)
-        centre_idx = np.random.choice(len(skel_idx[0]))
-        centre = (skel_idx[1][centre_idx], skel_idx[0][centre_idx])
-        radius = arg[2]  # (2. * dist_map[centre[::-1]])
-        op_img = op(bin_img, arg[0], centre, radius)
-        patho_img = transform.pyramid_reduce(op_img, downscale=UP_FACTOR)  # type: np.ndarray
-        if interactive:
-            plot_digit(op_img, axs[1, 1], name)
-            plot_digit(patho_img, axs[0, 1], name)
-            plot_ellipse(*centre, 0, radius, radius, axs[1, 1], ec='r', fc='None', lw=1)
-    else:
-        op_img = op(bin_img, *arg)
-        patho_img = transform.pyramid_reduce(op_img, downscale=UP_FACTOR)  # type: np.ndarray
-        if interactive:
-            plot_digit(op_img, axs[1, 1], name)
-            plot_digit(patho_img, axs[0, 1], name)
-
-    end = timeit.default_timer()
-    print("{}: {:.1f} ms".format(name, 1000. * (end - start)))
-
-    if interactive:
-        plt.tight_layout()
-        plt.show()
-
-    return (255. * patho_img).astype(np.uint8), i
+    print("[{:5d}] Preprocessing: {:.1f} ms".format(i, 1000. * (end - start)))
+    return pert_img, pert_idx
 
 
 if __name__ == '__main__':
-    import multiprocessing
-    import os
-    from morphomnist import idx
-
     filenames = ["train-images-idx3-ubyte", "t10k-images-idx3-ubyte"]
 
     pool = multiprocessing.Pool()
     for filename in filenames:
-        with open(os.path.join("../data/mnist/raw", filename), 'rb') as f:
+        with open(os.path.join(DATA_ROOT, "raw", filename), 'rb') as f:
             images = idx.load_uint8(f)
-        patho_results = pool.map(process_image, images, chunksize=1250)
 
-        patho_images, patho_labels = zip(*patho_results)
-        patho_images = np.array(patho_images)
-        patho_labels = np.array(patho_labels)
-        plot_digit(patho_images[0])
+        pert_results = pool.starmap(process_image, zip(np.arange(len(images)), images),
+                                    chunksize=1250)
+
+        pert_images, pert_labels = zip(*pert_results)
+        pert_images = np.array(pert_images)
+        pert_labels = np.array(pert_labels)
+        util.plot_digit(pert_images[0])
         plt.show()
-        print(patho_images.shape, patho_labels.shape)
+        print(pert_images.shape, pert_labels.shape, np.bincount(pert_labels))
+        util.save(pert_images, os.path.join(DATA_ROOT, "pert", filename) + '.gz')
 
-        with open(os.path.join("../data/mnist/patho", filename), 'wb') as f:
-            idx.save_uint8(patho_images, f)
-
-        label_filename = filename.split('-')[0] + "-patho-idx1-ubyte"
-        with open(os.path.join("../data/mnist/patho", label_filename), 'wb') as f:
-            idx.save_uint8(patho_labels, f)
+        label_filename = filename.split('-')[0] + "-pert-idx1-ubyte"
+        util.save(pert_labels, os.path.join(DATA_ROOT, "pert", label_filename) + '.gz')
     pool.close()
     pool.join()
