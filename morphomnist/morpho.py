@@ -159,14 +159,33 @@ def measure_image(img: np.ndarray, threshold: float = .5, scale: int = 4, bound_
     return area, length, mean_thck, slant, width, height
 
 
-def measure_batch(images: np.ndarray, threshold: float = .5, scale: int = 4, bound_frac: float = .02,
-                  verbose=False, pool: multiprocessing.Pool = None, chunksize: int = 1000):
-    # TODO: Report progress (e.g. using pool.imap variants)
-    args = ((img, threshold, scale, bound_frac, verbose) for img in images)
+def _measure_image_unpack(arg):
+    return measure_image(*arg)
+
+
+def measure_batch(images: np.ndarray, threshold: float = .5, scale: int = 4,
+                  bound_frac: float = .02, pool: multiprocessing.Pool = None, chunksize: int = 100):
+    args = ((img, threshold, scale, bound_frac, False) for img in images)
     if pool is None:
-        results = [measure_image(*arg) for arg in args]
+        gen = map(_measure_image_unpack, args)
     else:
-        results = pool.starmap(measure_image, args, chunksize=chunksize)
+        gen = pool.imap(_measure_image_unpack, args, chunksize=chunksize)
+
+    try:
+        import tqdm
+        gen = tqdm.tqdm(gen, total=len(images), unit='img', ascii=True)
+    except ImportError:
+        def plain_progress(g):
+            i = 0
+            print("\rProcessing images: {}/{}".format(0, len(images)), end='')
+            for res in g:
+                i += 1
+                print("\rProcessing images: {}/{}".format(i + 1, len(images)), end='')
+                yield res
+            print()
+        gen = plain_progress(gen)
+
+    results = list(gen)
     columns = ['area', 'length', 'thickness', 'slant', 'width', 'height']
     df = pd.DataFrame(results, columns=columns)
     return df
