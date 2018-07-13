@@ -28,7 +28,7 @@ def process_image(i, img):
     pert_img_hires = PERTS[pert_idx](morph)
     pert_img = morph.downscale(pert_img_hires)
     end = timeit.default_timer()
-    print("[{:5d}] Preprocessing: {:.1f} ms".format(i, 1000. * (end - start)))
+    print(f"[{i:5d}] Preprocessing: {1000. * (end - start):.1f} ms")
     return pert_img, pert_idx
 
 

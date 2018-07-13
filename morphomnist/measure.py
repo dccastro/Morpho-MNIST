@@ -20,10 +20,10 @@ def measure_image(img: np.ndarray, threshold: float = .5, scale: int = 4, bound_
     height = (corners[-1][1] - corners[0][1]) / morph.scale
 
     if verbose:
-        print("Thickness: {:.2f}".format(mean_thck))
-        print("Length: {:.1f}".format(length))
-        print("Slant: {:.0f}°".format(np.rad2deg(slant)))
-        print("Dimensions: {:.1f} x {:.1f}".format(width, height))
+        print(f"Thickness: {mean_thck:.2f}")
+        print(f"Length: {length:.1f}")
+        print(f"Slant: {np.rad2deg(slant):.0f}°")
+        print(f"Dimensions: {width:.1f} x {height:.1f}")
 
     return area, length, mean_thck, slant, width, height
 
@@ -46,10 +46,10 @@ def measure_batch(images: np.ndarray, threshold: float = .5, scale: int = 4,
     except ImportError:
         def plain_progress(g):
             i = 0
-            print("\rProcessing images: {}/{}".format(0, len(images)), end='')
+            print(f"\rProcessing images: {0}/{len(images)}", end='')
             for res in g:
                 i += 1
-                print("\rProcessing images: {}/{}".format(i + 1, len(images)), end='')
+                print(f"\rProcessing images: {i + 1}/{len(images)}", end='')
                 yield res
             print()
         gen = plain_progress(gen)

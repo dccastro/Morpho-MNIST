@@ -45,5 +45,5 @@ if __name__ == '__main__':
     for i in np.random.permutation(len(data)):
         util.plot_digit(data[i], plt.subplot(121))
         util.plot_digit(data_[i], plt.subplot(122))
-        plt.suptitle("Digit {} / {}".format(i, len(data)))
+        plt.suptitle(f"Digit {i} / {len(data)}")
         plt.show()
