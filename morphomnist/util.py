@@ -32,6 +32,7 @@ def plot_grid(imgs, nrow=None, **kwargs):
         ax.axis('off')
     for ax in axs.flat[num:]:
         ax.set_visible(False)
+    return fig, axs
 
 
 def plot_ellipse(x, y, angle, major, minor, ax, **kwargs):
