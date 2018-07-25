@@ -1,0 +1,141 @@
+import multiprocessing
+import os
+import pickle
+
+import numpy as np
+import pandas as pd
+import torch
+from torch.nn import functional as F
+
+from experiments import spec_util
+from experiments.disentanglement import stat_util
+from models import infogan, load_checkpoint
+from models.infogan import InfoGAN, Trainer
+from morphomnist import measure, util
+
+DATA_ROOT = "/vol/biomedic/users/dc315/mnist"
+CHECKPOINT_ROOT = "/data/morphomnist/checkpoints/weighted"
+PCORR_ROOT = "/data/morphomnist/pcorr/weighted"
+
+
+def encode(gan: infogan.InfoGAN, x):
+    with torch.no_grad():
+        _, hidden = gan.dis(x)
+        cat_logits, cont_mean, cont_logvar, bin_logit = gan.rec(hidden)
+    return cat_logits, cont_mean, cont_logvar, bin_logit
+
+
+def interleave(arrays, which):
+    for a in arrays:
+        a[0] = a[0].copy()
+    for i in range(1, max(which) + 1):
+        idx = (which == i)
+        for a in arrays:
+            a[0][idx] = a[i][idx]
+    return [a[0] for a in arrays]
+
+
+def load_test_data(data_dirs, weights=None):
+    metrics_paths = [os.path.join(data_dir, "t10k-morpho.csv") for data_dir in data_dirs]
+    images_paths = [os.path.join(data_dir, "t10k-images-idx3-ubyte.gz") for data_dir in data_dirs]
+    labels_paths = [os.path.join(data_dir, "t10k-labels-idx1-ubyte.gz") for data_dir in data_dirs]
+    metrics = list(map(pd.read_csv, metrics_paths))
+    images = list(map(util.load, images_paths))
+    labels = list(map(util.load, labels_paths))
+    if len(data_dirs) > 1:
+        if weights is not None:
+            weights = np.array(weights) / np.sum(weights)
+        which = np.random.choice(len(data_dirs), size=len(metrics[0]), p=weights)
+        metrics, images, labels = interleave([metrics, images, labels], which)
+        return metrics, images, labels, which
+    else:
+        return metrics[0], images[0], labels[0], None
+
+
+def compute_partial_correlation(gan: infogan.InfoGAN, images, metrics, cols):
+    cat_logits, mean, logvar, bin_logits = encode(gan, images)
+    phi = F.softmax(cat_logits.cpu(), dim=1).numpy()
+    mu = mean.cpu().numpy()
+    gamma = F.sigmoid(bin_logits.cpu()).numpy() \
+        if bin_logits is not None else np.empty([metrics.shape[0], 0])
+
+    pcorr = stat_util.compute_infogan_pcorr(phi, mu, gamma, metrics, cols)
+    print(pcorr)
+    return pcorr
+
+
+def add_swel_frac(data_dir, metrics, which):
+    test_pert = util.load(os.path.join(data_dir, "t10k-pert-idx1-ubyte.gz"))
+    metrics['swel'] = 0
+    metrics['frac'] = 0
+    pert_idx = (which == 1)
+    metrics.loc[pert_idx, 'swel'] = (test_pert[pert_idx] == 0).astype(int)
+    metrics.loc[pert_idx, 'frac'] = (test_pert[pert_idx] == 1).astype(int)
+
+
+def process(gan: infogan.InfoGAN, data, metrics, cols, pcorr_dir, spec, label, hrule=None):
+    pcorr = compute_partial_correlation(gan, data, metrics, cols)
+
+    payload = {
+        'cols': cols,
+        'hrule': hrule,
+        'pcorr': pcorr
+    }
+    filename = f"{spec}_pcorr_{label}.pickle"
+    path = os.path.join(pcorr_dir, filename)
+    print("Saving output to", path)
+    with open(path, 'wb') as f:
+        pickle.dump(payload, f, pickle.HIGHEST_PROTOCOL)
+
+
+def main(checkpoint_dir, pcorr_dir=None):
+    spec = os.path.split(checkpoint_dir)[-1]
+    _, latent_dims, dataset_names = spec_util.parse_setup_spec(spec)
+
+    device = torch.device('cuda')
+    gan = InfoGAN(*latent_dims)
+    trainer = Trainer(gan).to(device)
+    load_checkpoint(trainer, checkpoint_dir)
+    gan.eval()
+
+    data_dirs = [os.path.join(DATA_ROOT, name) for name in dataset_names]
+    test_metrics, test_images, test_labels, test_which = load_test_data(data_dirs)
+
+    print(test_metrics.head())
+
+    idx = np.random.permutation(10000)#[:1000]
+    X = torch.from_numpy(test_images[idx]).float().unsqueeze(1).to(device) / 255.
+
+    cols = ['length', 'thickness', 'slant', 'width', 'height']
+    test_cols = cols[:]
+    test_hrule = None
+    if 'swel-frac' in spec:
+        add_swel_frac(data_dirs[1], test_metrics, test_which)
+        test_cols += ['swel', 'frac']
+        test_hrule = len(cols)
+
+    if pcorr_dir is None:
+        pcorr_dir = checkpoint_dir
+    os.makedirs(pcorr_dir, exist_ok=True)
+
+    process(gan, X, test_metrics.loc[idx], test_cols, pcorr_dir, spec, 'test', test_hrule)
+
+    X_ = gan(1000).detach()
+    with multiprocessing.Pool() as pool:
+        sample_metrics = measure.measure_batch(X_.cpu().squeeze().numpy(), pool=pool)
+
+    sample_hrule = None
+    process(gan, X_, sample_metrics, cols, pcorr_dir, spec, 'sample', sample_hrule)
+
+
+if __name__ == '__main__':
+    spec = [
+        "InfoGAN-10c2g0b62n_plain",
+        "InfoGAN-10c3g0b62n_plain+pert-thin-thic",
+        "InfoGAN-10c3g0b62n_plain+pert-swel-frac",
+        "InfoGAN-10c2g2b62n_plain+pert-swel-frac",
+    ][3]
+    # spec = "InfoGAN-10c3g0b62n_plain+pert-swel-frac"
+    checkpoint_dir = os.path.join(CHECKPOINT_ROOT, spec)
+    # main(checkpoint_dir, OUTPUT_ROOT)
+    main(checkpoint_dir, PCORR_ROOT)
