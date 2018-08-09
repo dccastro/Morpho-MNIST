@@ -18,37 +18,54 @@ def partial_correlation2(x, y, control):
     return -prec[0, 1] / np.sqrt(prec[0, 0] * prec[1, 1])
 
 
-def compute_infogan_pcorr(phi, mu, gamma, metrics, cols):
-    cat_dim, cont_dim, bin_dim = phi.shape[1], mu.shape[1], gamma.shape[1]
-    pcorr = np.zeros([len(cols), cat_dim + cont_dim + bin_dim])
-    phi_ = sm.categorical(phi.argmax(1), drop=True)
-    gamma_ = gamma > .5
-    for c, col in enumerate(cols):
-        dv = metrics[col].values
-        for cat in range(cat_dim):
-            iv = phi_[:, cat]
-            control = np.column_stack([
-                np.ones(iv.shape[0]),
-                mu,
-                gamma_
-            ])
-            pcorr[c, cat] = partial_correlation2(iv, dv, control)
-        for cont in range(cont_dim):
-            iv = mu[:, cont]
-            control = np.column_stack([
-                phi_,
-                mu[:, :cont],
-                mu[:, cont + 1:],
-                gamma_
-            ])
-            pcorr[c, cat_dim + cont] = partial_correlation2(iv, dv, control)
-        for bin in range(bin_dim):
-            iv = gamma_[:, bin]
-            control = np.column_stack([
-                phi_,
-                mu,
-                gamma_[:, :bin],
-                gamma_[:, bin + 1:]
-            ])
-            pcorr[c, cat_dim + cont_dim + bin] = partial_correlation2(iv, dv, control)
+def partial_correlation_matrix(ivs, dvs, which=None):
+    """Computes the partial correlations of each dependent variable with each selected independent
+    variable, while controlling for all remaining independent variables at a time.
+
+    Parameters
+    ----------
+    ivs : (N, M) array_like
+        Independent variables.
+    dvs : (N, I) array_like
+        Dependent variables. If a 1D-array is given, it will be reshaped to `(N, 1)`.
+    which : (J,) array_like
+        Column indices of the independent variables for which to compute the partial
+        correlations. If an integer is given, it will be cast as a `(1,)` array.
+
+    Returns
+    -------
+    (I, J) np.ndarray
+        Partial correlation matrix between dependent variables (rows) and selected independent
+        variables (columns).
+    """
+    ivs, dvs = np.asarray(ivs), np.asarray(dvs)
+    if dvs.ndim == 1:
+        dvs = dvs[:, None]
+    if which is None:
+        which = np.arange(ivs.shape[1])
+    else:
+        which = np.atleast_1d(which)
+    nx, ny = len(which), dvs.shape[1]
+    pcorr = np.zeros([ny, nx])
+    for j, w in enumerate(which):
+        iv = ivs[:, w]
+        control = np.c_[ivs[:, :w], ivs[:, w + 1:]]
+        for i in range(ny):
+            dv = dvs[:, i]
+            pcorr[i, j] = partial_correlation2(iv, dv, control)
     return pcorr
+
+
+if __name__ == '__main__':
+    N = 1000
+    x = np.random.randn(N, 5)
+    y = np.random.randn(N, 3)
+    print(partial_correlation_matrix(x, y))
+    print(partial_correlation_matrix(x, y, [1, 2]))
+    print(partial_correlation_matrix(x, y, [1]))
+    print(partial_correlation_matrix(x, y, 1))
+
+    y_ = y[:, 0]
+    print(partial_correlation_matrix(x, y_))
+    print(partial_correlation_matrix(x, y_, [1, 2]))
+    print(partial_correlation_matrix(x, y_, 1))

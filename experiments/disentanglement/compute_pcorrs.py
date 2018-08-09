@@ -59,7 +59,28 @@ def compute_partial_correlation(gan: infogan.InfoGAN, images, metrics, cols):
     gamma = F.sigmoid(bin_logits.cpu()).numpy() \
         if bin_logits is not None else np.empty([metrics.shape[0], 0])
 
-    pcorr = stat_util.compute_infogan_pcorr(phi, mu, gamma, metrics, cols)
+    phi_ = np.eye(phi.shape[1])[phi.argmax(1)]  # One-hot
+    gamma_ = gamma > .5
+
+    cat_dim, cont_dim, bin_dim = phi.shape[1], mu.shape[1], gamma.shape[1]
+    splits = np.cumsum([cat_dim, cont_dim, bin_dim])
+    pcorr = np.zeros([len(cols), splits[-1]])
+
+    # Categorical codes
+    dvs = metrics[cols].values
+    for cat in range(splits[0]):
+        ivs = np.column_stack([phi_[:, cat], mu, gamma_, np.ones(phi.shape[0])])
+        pcorr[:, cat] = stat_util.partial_correlation_matrix(ivs, dvs, which=[cat]).squeeze()
+
+    # Continuous codes
+    ivs = np.column_stack([phi_, mu, gamma_])
+    pcorr[:, splits[0]:splits[1]] = stat_util.partial_correlation_matrix(
+        ivs, dvs, which=np.arange(splits[0], splits[1]))
+
+    # Binary codes
+    pcorr[:, splits[1]:splits[2]] = stat_util.partial_correlation_matrix(
+        ivs, dvs, which=np.arange(splits[1], splits[2]))
+
     print(pcorr)
     return pcorr
 
