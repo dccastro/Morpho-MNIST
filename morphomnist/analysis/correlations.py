@@ -1,21 +1,21 @@
 import numpy as np
-import statsmodels.api as sm
 
 
 def correlation(x, y):
     return ((x - x.mean()) / x.std(0)).T @ ((y - y.mean(0)) / y.std(0)) / x.shape[0]
 
 
-def partial_correlation(x, y, control):
-    res_x = sm.OLS(x, control).fit().resid
-    res_y = sm.OLS(y, control).fit().resid
-    return correlation(res_x, res_y)
 
-
-def partial_correlation2(x, y, control):
-    var = np.column_stack([y, x, control])
-    prec = np.linalg.inv(var.T @ var)
-    return -prec[0, 1] / np.sqrt(prec[0, 0] * prec[1, 1])
+def partial_correlation(x, y, control, use_statsmodels=False):
+    if use_statsmodels:
+        import statsmodels.api as sm
+        res_x = sm.OLS(x, control).fit().resid
+        res_y = sm.OLS(y, control).fit().resid
+        return correlation(res_x, res_y)
+    else:
+        var = np.column_stack([y, x, control])
+        prec = np.linalg.inv(var.T @ var)
+        return -prec[0, 1] / np.sqrt(prec[0, 0] * prec[1, 1])
 
 
 def partial_correlation_matrix(ivs, dvs, which=None):
@@ -52,7 +52,7 @@ def partial_correlation_matrix(ivs, dvs, which=None):
         control = np.c_[ivs[:, :w], ivs[:, w + 1:]]
         for i in range(ny):
             dv = dvs[:, i]
-            pcorr[i, j] = partial_correlation2(iv, dv, control)
+            pcorr[i, j] = partial_correlation(iv, dv, control)
     return pcorr
 
 
