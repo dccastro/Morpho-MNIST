@@ -8,10 +8,10 @@ import torch
 from torch.nn import functional as F
 
 from experiments import spec_util
-from experiments.disentanglement import stat_util
 from models import infogan, load_checkpoint
 from models.infogan import InfoGAN, Trainer
 from morphomnist import measure, util
+from morphomnist.analysis import correlations
 
 DATA_ROOT = "/vol/biomedic/users/dc315/mnist"
 CHECKPOINT_ROOT = "/data/morphomnist/checkpoints/weighted"
@@ -70,15 +70,15 @@ def compute_partial_correlation(gan: infogan.InfoGAN, images, metrics, cols):
     dvs = metrics[cols].values
     for cat in range(splits[0]):
         ivs = np.column_stack([phi_[:, cat], mu, gamma_, np.ones(phi.shape[0])])
-        pcorr[:, cat] = stat_util.partial_correlation_matrix(ivs, dvs, which=[cat]).squeeze()
+        pcorr[:, cat] = correlations.partial_correlation_matrix(ivs, dvs, which=[cat]).squeeze()
 
     # Continuous codes
     ivs = np.column_stack([phi_, mu, gamma_])
-    pcorr[:, splits[0]:splits[1]] = stat_util.partial_correlation_matrix(
+    pcorr[:, splits[0]:splits[1]] = correlations.partial_correlation_matrix(
         ivs, dvs, which=np.arange(splits[0], splits[1]))
 
     # Binary codes
-    pcorr[:, splits[1]:splits[2]] = stat_util.partial_correlation_matrix(
+    pcorr[:, splits[1]:splits[2]] = correlations.partial_correlation_matrix(
         ivs, dvs, which=np.arange(splits[1], splits[2]))
 
     print(pcorr)
