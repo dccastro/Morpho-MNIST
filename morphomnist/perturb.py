@@ -70,7 +70,11 @@ class Fracture(Perturbation):
         r = int(np.ceil((up_thickness - 1) / 2))
         brush = ~morphology.disk(r).astype(bool)
         frac_img = np.pad(morph.binary_image, pad_width=r, mode='constant', constant_values=False)
-        for centre in self.loc_sampler.sample(morph, self.num_frac):
+        try:
+            centres = self.loc_sampler.sample(morph, self.num_frac)
+        except ValueError:  # Skeleton vanished with pruning, attempt without
+            centres = skeleton.LocationSampler().sample(morph, self.num_frac)
+        for centre in centres:
             p0, p1 = self._endpoints(morph, centre)
             self._draw_line(frac_img, p0, p1, brush)
         return frac_img[r:-r, r:-r]

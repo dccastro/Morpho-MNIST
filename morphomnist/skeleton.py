@@ -75,9 +75,11 @@ class LocationSampler(object):
             up_prune = int(self.prune_tips * morph.scale)
             skel = erase(skel, num_neighbours(skel) == 1, up_prune)
         if self.prune_forks is not None:
-            up_prune = int(self.prune_tips * morph.scale)
+            up_prune = int(self.prune_forks * morph.scale)
             skel = erase(skel, num_neighbours(skel) == 3, up_prune)
 
         coords = np.array(np.where(skel)).T
+        if coords.shape[0] == 0:
+            raise ValueError("Overpruned skeleton")
         centre_idx = np.random.choice(coords.shape[0], size=num)
         return coords[centre_idx]
