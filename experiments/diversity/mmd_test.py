@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from morphomnist.analysis import kernels, mmd
+from analysis import kernels, mmd
 
 if __name__ == '__main__':
     cols = ['length', 'thickness', 'slant', 'width', 'height']

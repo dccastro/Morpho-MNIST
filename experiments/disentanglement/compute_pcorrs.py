@@ -7,11 +7,10 @@ import pandas as pd
 import torch
 from torch.nn import functional as F
 
+from analysis import correlations
 from experiments import spec_util
 from models import infogan, load_checkpoint
-from models.infogan import InfoGAN, Trainer
 from morphomnist import measure, util
-from morphomnist.analysis import correlations
 
 DATA_ROOT = "/vol/biomedic/users/dc315/mnist"
 CHECKPOINT_ROOT = "/data/morphomnist/checkpoints/weighted"
@@ -114,8 +113,8 @@ def main(checkpoint_dir, pcorr_dir=None):
     _, latent_dims, dataset_names = spec_util.parse_setup_spec(spec)
 
     device = torch.device('cuda')
-    gan = InfoGAN(*latent_dims)
-    trainer = Trainer(gan).to(device)
+    gan = infogan.InfoGAN(*latent_dims)
+    trainer = infogan.Trainer(gan).to(device)
     load_checkpoint(trainer, checkpoint_dir)
     gan.eval()
 
