@@ -5,6 +5,34 @@ import numpy as np
 KernelFunc = Callable[[np.ndarray, np.ndarray, Optional[Any]], np.ndarray]
 
 
+def product(x, y, scale=1.):
+    """Scaled inner product between two collections of points.
+
+    Parameters
+    ----------
+    x, y : (..., D) array_like
+        Input data; must have broadcastable shapes, with data dimensions along the last axis.
+    scale : optional
+        - scalar: scale distances by this factor
+        - (D,) array_like: scale each dimension by the corresponding value
+        - (D, D) array_like: will be treated as a *squared* scale matrix (e.g. covariance)
+
+    Returns
+    -------
+    np.ndarray
+        The computed inner product, with the broadcast shape of `x` and `y` minus the last axis.
+    """
+    x, y = np.asarray(x), np.asarray(y)
+    scale = np.asarray(scale)
+    if scale.ndim == 0:
+        return (x * y).sum(axis=-1) / (scale ** 2)
+    elif scale.ndim == 1:
+        return ((x / scale) * (y / scale)).sum(axis=-1)
+    else:
+        inv_scale = np.linalg.inv(scale)
+        return np.einsum('...i,ij,...j->...', x, inv_scale, y)
+
+
 def sq_dist(x, y, scale=1.):
     """Scaled squared Euclidean distance between two collections of points.
 
@@ -24,14 +52,7 @@ def sq_dist(x, y, scale=1.):
     """
     x, y = np.asarray(x), np.asarray(y)
     diff = x - y
-    scale = np.asarray(scale)
-    if scale.ndim == 0:
-        return (diff ** 2).sum(axis=-1) / (scale ** 2)
-    elif scale.ndim == 1:
-        return ((diff / scale) ** 2).sum(axis=-1)
-    else:
-        inv_scale = np.linalg.inv(scale)
-        return np.einsum('...i,ij,...j->...', diff, inv_scale, diff)
+    return product(diff, diff, scale)
 
 
 def exp_quad(x: np.ndarray, y: np.ndarray, scale=1.):
@@ -52,6 +73,19 @@ def rat_quad(x: np.ndarray, y: np.ndarray, exponent: float, scale=1.):
     sq_dist : Scaled squared Euclidean distance.
     """
     return (1. + .5 * sq_dist(x, y, scale) / exponent) ** (-exponent)
+
+
+def polynomial(x: np.ndarray, y: np.ndarray, power: int, scale=1.):
+    """Polynomial kernel.
+
+    See Also
+    --------
+    product : Scaled inner product.
+    """
+    x, y = np.asarray(x), np.asarray(y)
+    d = x.shape[-1]
+    prod = product(x, y, scale)
+    return (prod / d + 1.) ** power
 
 
 def _get_scale(x: np.ndarray, type: str) -> Union[float, np.ndarray]:
@@ -77,7 +111,7 @@ def _get_factor(n: int, d: int, factor: Union[float, str]) -> float:
     return factor
 
 
-def bandwidth(*x: np.ndarray, type='cov', factor='scott', subsample=None):
+def bandwidth(*x: np.ndarray, type='cov', factor: Union[float, str] = 'scott', subsample=None):
     """Estimates a bandwidth for kernel density estimation of the given data.
 
     Parameters
@@ -138,6 +172,17 @@ if __name__ == '__main__':
     s0 = np.std(x)
     s1 = np.std(x, axis=0)
     s2 = np.cov(x, rowvar=False, bias=True)
+
+    for s in [s0, s1, s2]:
+        try:
+            product(x, y, s)
+            assert False
+        except ValueError:
+            pass
+        assert product(x, x, s).shape == (Nx,)
+        assert product(y, y, s).shape == (Ny,)
+        assert product(x[:, None], y[None, :], s).shape == (Nx, Ny)
+        assert product(y[:, None], x[None, :], s).shape == (Ny, Nx)
 
     for s in [s0, s1, s2]:
         try:
