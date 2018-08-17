@@ -46,7 +46,6 @@ if __name__ == '__main__':
         "VAE-64_plain",
         "GAN-64_plain",
         "GAN-2_plain",
-        "GAN-1_plain",
     ]
     N_sample = 10000
     with multiprocessing.Pool() as pool:

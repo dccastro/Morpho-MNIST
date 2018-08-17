@@ -24,11 +24,13 @@ def main(metrics, figure_path=None):
     dist_plots.plot_distribution(metrics, cols, lims, multiples, formats)
     if figure_path is not None:
         fig_kwargs = dict(dpi=400, bbox_inches='tight', pad_inches=0)
+        print(f"Saving figure to {figure_path}")
         plt.savefig(figure_path, **fig_kwargs)
     plt.show()
 
 
 if __name__ == '__main__':
+    os.makedirs(FIGURE_ROOT, exist_ok=True)
     dataset_dir = "/vol/biomedic/users/dc315/mnist/plain"
     test_metrics = pd.read_csv(os.path.join(dataset_dir, "t10k-morpho.csv"))
     figure_path = os.path.join(FIGURE_ROOT, f"test_plain_morpho_dist.pdf")
@@ -37,7 +39,6 @@ if __name__ == '__main__':
         "VAE-64_plain",
         "GAN-64_plain",
         "GAN-2_plain",
-        "GAN-1_plain",
     ]
 
     pool = multiprocessing.Pool()

@@ -10,7 +10,7 @@ if __name__ == '__main__':
     specs = ["VAE-64_plain", "GAN-64_plain", "GAN-2_plain"]
     N = 10000
     np.set_printoptions(linewidth=160, precision=4)
-    seed = 0
+    seed = 123456
     print(seed)
     for spec in specs:
         print("Test data vs.", spec)
