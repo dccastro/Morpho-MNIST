@@ -19,13 +19,11 @@ _PARSERS = {
     'InfoGAN': _parse_infogan_spec,
     'VAE': int,
     'GAN': int,
-    'GANmc': int,
 }
 _FORMATTERS = {
     'InfoGAN': _format_infogan_spec,
     'VAE': str,
     'GAN': str,
-    'GANmc': str,
 }
 
 
@@ -55,10 +53,10 @@ def parse_setup_spec(string):
 
 if __name__ == '__main__':
     for setup_spec in ["InfoGAN-10c2g0b62n_plain",
-                       "InfoGAN-10c3g0b62n_plain+pert-thin-thic",
-                       "InfoGAN-a_plain+pert-swel-frac",
-                       "GANTT-10_plain+pert-swel-frac",
-                       "VAE-64_plain+pert-thin-thic",
+                       "InfoGAN-10c3g0b62n_plain+thin+thic",
+                       "InfoGAN-X_plain+swel+frac",
+                       "GANXX-10_plain+swel+frac",
+                       "VAE-64_plain+thin+thic",
                        "GAN-64_plain"]:
         print(setup_spec)
         try:

@@ -5,7 +5,8 @@ from experiments import train_infogan
 if __name__ == '__main__':
     common_kwargs = dict(
         use_cuda=True,
-        ckpt_root="/data/morphomnist/checkpoints/weighted",
+        ckpt_root="/data/morphomnist/checkpoints",
+        weights=None,
         num_epochs=20,
         batch_size=64,
         save=True,
@@ -15,18 +16,12 @@ if __name__ == '__main__':
         noise_dim=62,
     )
     data_root = "/vol/biomedic/users/dc315/mnist"
-    # train_infogan.main(**common_kwargs, cont_dim=2, bin_dim=0,
-    #     data_dirs=os.path.join(data_root, "plain"), weights=None)
-    #
-    # train_infogan.main(**common_kwargs, cont_dim=3, bin_dim=0,
-    #     data_dirs=[os.path.join(data_root, name) for name in ["plain", "pert-thin-thic"]],
-    #     weights=[1, 2])
-    #
-    # train_infogan.main(**common_kwargs, cont_dim=3, bin_dim=0,
-    #     data_dirs=[os.path.join(data_root, name) for name in ["plain", "pert-swel-frac"]],
-    #     weights=[1, 2])
-
+    # InfoGAN-A
+    train_infogan.main(**common_kwargs, cont_dim=2, bin_dim=0,
+                       data_dirs=os.path.join(data_root, "plain"))
+    # InfoGAN-B
+    train_infogan.main(**common_kwargs, cont_dim=3, bin_dim=0,
+                       data_dirs=os.path.join(data_root, "plain+thin+thic"))
+    # InfoGAN-C
     train_infogan.main(**common_kwargs, cont_dim=2, bin_dim=2,
-                       data_dirs=[os.path.join(data_root, name)
-                                  for name in ["plain", "pert-swel-frac"]],
-                       weights=[1, 2])
+                       data_dirs=os.path.join(data_root, "plain+swel+frac"))

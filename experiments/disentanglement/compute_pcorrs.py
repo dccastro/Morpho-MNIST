@@ -13,8 +13,8 @@ from models import infogan, load_checkpoint
 from morphomnist import measure, util
 
 DATA_ROOT = "/vol/biomedic/users/dc315/mnist"
-CHECKPOINT_ROOT = "/data/morphomnist/checkpoints/weighted"
-PCORR_ROOT = "/data/morphomnist/pcorr/weighted"
+CHECKPOINT_ROOT = "/data/morphomnist/checkpoints"
+PCORR_ROOT = "/data/morphomnist/pcorr"
 
 
 def encode(gan: infogan.InfoGAN, x):
@@ -84,13 +84,10 @@ def compute_partial_correlation(gan: infogan.InfoGAN, images, metrics, cols):
     return pcorr
 
 
-def add_swel_frac(data_dir, metrics, which):
+def add_swel_frac(data_dir, metrics):
     test_pert = util.load(os.path.join(data_dir, "t10k-pert-idx1-ubyte.gz"))
-    metrics['swel'] = 0
-    metrics['frac'] = 0
-    pert_idx = (which == 1)
-    metrics.loc[pert_idx, 'swel'] = (test_pert[pert_idx] == 0).astype(int)
-    metrics.loc[pert_idx, 'frac'] = (test_pert[pert_idx] == 1).astype(int)
+    metrics['swel'] = (test_pert == 3).astype(int)
+    metrics['frac'] = (test_pert == 4).astype(int)
 
 
 def process(gan: infogan.InfoGAN, data, metrics, cols, pcorr_dir, spec, label, hrule=None):
@@ -118,7 +115,7 @@ def main(checkpoint_dir, pcorr_dir=None):
     load_checkpoint(trainer, checkpoint_dir)
     gan.eval()
 
-    data_dirs = [os.path.join(DATA_ROOT, name) for name in dataset_names]
+    data_dirs = [os.path.join(DATA_ROOT, '+'.join(dataset_names))]
     test_metrics, test_images, test_labels, test_which = load_test_data(data_dirs)
 
     print(test_metrics.head())
@@ -129,8 +126,8 @@ def main(checkpoint_dir, pcorr_dir=None):
     cols = ['length', 'thickness', 'slant', 'width', 'height']
     test_cols = cols[:]
     test_hrule = None
-    if 'swel-frac' in spec:
-        add_swel_frac(data_dirs[1], test_metrics, test_which)
+    if 'swel+frac' in spec:
+        add_swel_frac(data_dirs[0], test_metrics)
         test_cols += ['swel', 'frac']
         test_hrule = len(cols)
 
@@ -149,13 +146,12 @@ def main(checkpoint_dir, pcorr_dir=None):
 
 
 if __name__ == '__main__':
-    spec = [
-        "InfoGAN-10c2g0b62n_plain",
-        "InfoGAN-10c3g0b62n_plain+pert-thin-thic",
-        "InfoGAN-10c3g0b62n_plain+pert-swel-frac",
-        "InfoGAN-10c2g2b62n_plain+pert-swel-frac",
-    ][3]
-    # spec = "InfoGAN-10c3g0b62n_plain+pert-swel-frac"
-    checkpoint_dir = os.path.join(CHECKPOINT_ROOT, spec)
-    # main(checkpoint_dir, OUTPUT_ROOT)
-    main(checkpoint_dir, PCORR_ROOT)
+    specs = [
+        "InfoGAN-10c2g62n_plain",
+        "InfoGAN-10c3g62n_plain+thin+thic",
+        "InfoGAN-10c2g2b62n_plain+swel+frac",
+    ][:1]
+    np.set_printoptions(precision=2, linewidth=100)
+    for spec in specs:
+        checkpoint_dir = os.path.join(CHECKPOINT_ROOT, spec)
+        main(checkpoint_dir, PCORR_ROOT)

@@ -8,7 +8,7 @@ from models import load_checkpoint
 from models.infogan import InfoGAN, Trainer
 
 DATA_ROOT = "/vol/biomedic/users/dc315/mnist"
-CHECKPOINT_ROOT = "/data/morphomnist/checkpoints/weighted"
+CHECKPOINT_ROOT = "/data/morphomnist/checkpoints"
 FIGURE_ROOT = "/vol/biomedic/users/dc315/morphomnist/fig"
 
 
@@ -24,11 +24,11 @@ def load_gan(spec):
 
 
 def main(trav_dir):
-    spec = "InfoGAN-10c2g0b62n_plain"
-    gan = load_gan(spec)
-
     os.makedirs(trav_dir, exist_ok=True)
     fig_kwargs = dict(dpi=300, bbox_inches='tight', pad_inches=0)
+
+    spec = "InfoGAN-10c2g62n_plain"
+    gan = load_gan(spec)
 
     infogan_util.plot_cat_traversal(gan, 3)
     plt.savefig(os.path.join(trav_dir, spec + "_cat_trav.pdf"), **fig_kwargs)
@@ -36,10 +36,10 @@ def main(trav_dir):
     infogan_util.plot_cont_traversal(gan, 1, 3)
     plt.savefig(os.path.join(trav_dir, spec + "_cont_trav.pdf"), **fig_kwargs)
 
-    # spec = "InfoGAN-10c3g0b62n_plain+pert-thin-thic"
-    # gan = load_gan(spec)
-    # infogan_util.plot_cont_cont_traversal(gan, 0, 2, 7)
-    # plt.savefig(os.path.join(trav_dir, spec + "_cont_cont_trav.pdf"), **fig_kwargs)
+    spec = "InfoGAN-10c3g62n_plain+thin+thic"
+    gan = load_gan(spec)
+    infogan_util.plot_cont_cont_traversal(gan, 2, 1, 7)
+    plt.savefig(os.path.join(trav_dir, spec + "_cont_cont_trav.pdf"), **fig_kwargs)
 
 
 if __name__ == '__main__':

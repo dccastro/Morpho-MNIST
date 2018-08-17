@@ -72,7 +72,6 @@ def main(pcorr_path, figure_dir=None):
 
     plot_partial_correlation(latent_dims, payload['pcorr'], payload['cols'], payload['hrule'])
     if figure_dir is not None:
-        # filename = f"{spec}_pcorr_test.pdf"
         filename = pcorr_filename.split('.')[0] + ".pdf"
         shape = np.array(payload['pcorr'].shape)
         set_size(*(.3 * shape)[::-1])
@@ -81,15 +80,12 @@ def main(pcorr_path, figure_dir=None):
 
 
 if __name__ == '__main__':
-    spec = [
-        "InfoGAN-10c2g0b62n_plain",
-        "InfoGAN-10c3g0b62n_plain+pert-thin-thic",
-        "InfoGAN-10c3g0b62n_plain+pert-swel-frac",
-        "InfoGAN-10c2g2b62n_plain+pert-swel-frac",
-    ][1]
-    # spec = "InfoGAN-10c3g0b62n_plain+pert-swel-frac"
-    # checkpoint_dir = os.path.join(CHECKPOINT_ROOT, spec)
-    # main(checkpoint_dir, OUTPUT_ROOT)
-    for label in ['test', 'sample']:
-        pcorr_path = os.path.join(PCORR_ROOT, f"{spec}_pcorr_{label}.pickle")
-        main(pcorr_path, FIGURE_ROOT)
+    specs = [
+        "InfoGAN-10c2g62n_plain",
+        "InfoGAN-10c3g62n_plain+thin+thic",
+        "InfoGAN-10c2g2b62n_plain+swel+frac",
+    ]
+    for spec in specs:
+        for label in ['test', 'sample']:
+            pcorr_path = os.path.join(PCORR_ROOT, f"{spec}_pcorr_{label}.pickle")
+            main(pcorr_path, FIGURE_ROOT)
