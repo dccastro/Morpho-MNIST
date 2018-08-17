@@ -27,8 +27,7 @@ if __name__ == '__main__':
 
     pool = multiprocessing.Pool()
     for filename in filenames:
-        with open(os.path.join(DATA_ROOT, "raw", filename), 'rb') as f:
-            images = idx.load_uint8(f)
+        images = idx.load(os.path.join(DATA_ROOT, "raw", filename))
 
         pert_results = pool.starmap(process_image, zip(np.arange(len(images)), images),
                                     chunksize=1250)

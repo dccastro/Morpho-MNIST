@@ -5,7 +5,7 @@ import struct
 import numpy as np
 
 
-def load_uint8(f):
+def _load_uint8(f):
     idx_dtype, ndim = struct.unpack('BBBB', f.read(4))[2:]
     shape = struct.unpack('>' + 'I' * ndim, f.read(4 * ndim))
     buffer_length = int(np.prod(shape))
@@ -13,7 +13,7 @@ def load_uint8(f):
     return data
 
 
-def save_uint8(data, f):
+def _save_uint8(data, f):
     if data.dtype is not np.uint8:
         data = data.astype(np.uint8)
     f.write(struct.pack('BBBB', 0, 0, 0x08, data.ndim))
@@ -22,41 +22,27 @@ def save_uint8(data, f):
 
 
 def save(data, path):
-    with gzip.open(path, 'wb') as f:
-        save_uint8(data, f)
+    open_fcn = gzip.open if path.endswith('.gz') else open
+    with open_fcn(path, 'wb') as f:
+        _save_uint8(data, f)
 
 
 def load(path):
-    with gzip.open(path, 'rb') as f:
-        data = load_uint8(f)
-    return data
+    open_fcn = gzip.open if path.endswith('.gz') else open
+    with open_fcn(path, 'rb') as f:
+        return _load_uint8(f)
 
 
 if __name__ == '__main__':
     # MNIST_FILE = "data/mnist/raw/train-images-idx3-ubyte"
-    MNIST_FILE = "data/mnist/patho/train-images-idx3-ubyte"
+    MNIST_FILE = "/vol/biomedic/users/dc315/mnist/raw/train-images-idx3-ubyte.gz"
     TEST_FILE = "test"
 
-    with open(MNIST_FILE, 'rb') as f:
-        data = load_uint8(f)
-
-    with open(TEST_FILE, 'wb') as f:
-        save_uint8(data, f)
-
-    with open(TEST_FILE, 'rb') as f:
-        data_ = load_uint8(f)
+    data = load(MNIST_FILE)
+    save(data, TEST_FILE)
+    data_ = load(TEST_FILE)
 
     import os
     os.remove(TEST_FILE)
 
-    print(data.shape)
-    print(data_.shape)
-
-    import matplotlib.pyplot as plt
-    from morphomnist import util
-
-    for i in np.random.permutation(len(data)):
-        util.plot_digit(data[i], plt.subplot(121))
-        util.plot_digit(data_[i], plt.subplot(122))
-        plt.suptitle(f"Digit {i} / {len(data)}")
-        plt.show()
+    assert np.alltrue(data == data_)
