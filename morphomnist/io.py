@@ -1,4 +1,3 @@
-# TODO: Add documentation
 import gzip
 import struct
 
@@ -14,6 +13,7 @@ def _load_uint8(f):
 
 
 def _save_uint8(data, f):
+    data = np.asarray(data)
     if data.dtype is not np.uint8:
         data = data.astype(np.uint8)
     f.write(struct.pack('BBBB', 0, 0, 0x08, data.ndim))
@@ -21,13 +21,42 @@ def _save_uint8(data, f):
     f.write(data.tobytes())
 
 
-def save_idx(data, path):
+def save_idx(data: np.ndarray, path: str):
+    """Writes an array to disk in IDX format.
+
+    Parameters
+    ----------
+    data : array_like
+        Input array of dtype ``uint8`` (will be coerced if different dtype).
+    path : str
+        Path of the output file. Will compress with `gzip` if path ends in '.gz'.
+
+    References
+    ----------
+    http://yann.lecun.com/exdb/mnist/
+    """
     open_fcn = gzip.open if path.endswith('.gz') else open
     with open_fcn(path, 'wb') as f:
         _save_uint8(data, f)
 
 
-def load_idx(path):
+def load_idx(path: str) -> np.ndarray:
+    """Reads an array in IDX format from disk.
+
+    Parameters
+    ----------
+    path : str
+        Path of the input file. Will uncompress with `gzip` if path ends in '.gz'.
+
+    Returns
+    -------
+    np.ndarray
+        Output array of dtype ``uint8``.
+
+    References
+    ----------
+    http://yann.lecun.com/exdb/mnist/
+    """
     open_fcn = gzip.open if path.endswith('.gz') else open
     with open_fcn(path, 'rb') as f:
         return _load_uint8(f)
