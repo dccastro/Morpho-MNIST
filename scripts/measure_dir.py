@@ -11,7 +11,7 @@ def measure_dir(data_dir, pool):
         out_path = os.path.join(data_dir, name + "-morpho.csv")
         print(f"Processing MNIST data file {in_path}...")
         data = util.load(in_path)
-        df = measure.measure_batch(data, pool=pool, chunksize=1000)
+        df = measure.measure_batch(data, pool=pool, chunksize=100)
         df.to_csv(out_path, index_label='index')
         print(f"Morphometrics saved to {out_path}")
 
