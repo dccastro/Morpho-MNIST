@@ -37,6 +37,6 @@ if __name__ == '__main__':
         util.plot_digit(pert_images[0])
         plt.show()
         print(pert_images.shape)
-        util.save(pert_images, os.path.join(DATA_ROOT, "plain", filename) + '.gz')
+        idx.save(pert_images, os.path.join(DATA_ROOT, "plain", filename) + '.gz')
     pool.close()
     pool.join()

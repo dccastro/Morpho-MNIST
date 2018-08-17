@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, TensorDataset
 
-from morphomnist import util
+from morphomnist import idx
 
 
 class MNISTLike(TensorDataset):
@@ -13,8 +13,8 @@ class MNISTLike(TensorDataset):
         prefix = "train" if train else "t10k"
         images_filename = prefix + "-images-idx3-ubyte.gz"
         labels_filename = prefix + "-labels-idx1-ubyte.gz"
-        self.images = torch.from_numpy(util.load(os.path.join(self.root_dir, images_filename)))
-        self.labels = torch.from_numpy(util.load(os.path.join(self.root_dir, labels_filename)))
+        self.images = torch.from_numpy(idx.load(os.path.join(self.root_dir, images_filename)))
+        self.labels = torch.from_numpy(idx.load(os.path.join(self.root_dir, labels_filename)))
         super().__init__(self.images, self.labels)
 
 

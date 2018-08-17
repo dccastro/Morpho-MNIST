@@ -4,7 +4,7 @@ import shutil
 import numpy as np
 import pandas as pd
 
-from morphomnist import util
+from morphomnist import idx
 
 
 def interleave_dfs(dfs, indices, keys):
@@ -29,13 +29,13 @@ if __name__ == '__main__':
             data_dirs = [os.path.join(data_root, dataset_names[i]) for i in pairing]
             imgs_paths = [os.path.join(data_dir, images_filename) for data_dir in data_dirs]
             metrics_paths = [os.path.join(data_dir, metrics_filename) for data_dir in data_dirs]
-            all_images = np.array([util.load(path) for path in imgs_paths])
+            all_images = np.array([idx.load(path) for path in imgs_paths])
             all_metrics = [pd.read_csv(path, index_col='index') for path in metrics_paths]
 
             num = all_images[0].shape[0]
-            idx = np.random.choice(len(pairing), size=num)
-            pert = np.asarray(pairing)[idx]
-            inter_images = all_images[idx, np.arange(num)]
+            indices = np.random.choice(len(pairing), size=num)
+            pert = np.asarray(pairing)[indices]
+            inter_images = all_images[indices, np.arange(num)]
             inter_metrics = interleave_dfs(all_metrics, pert, pairing)
 
             inter_dir = os.path.join(data_root, '+'.join([dataset_names[i] for i in pairing]))
@@ -46,9 +46,9 @@ if __name__ == '__main__':
             inter_metrics_path = os.path.join(inter_dir, metrics_filename)
             inter_labels_path = os.path.join(inter_dir, labels_filename)
             print(f"- Saving perturbation labels to {pert_filename}")
-            util.save(pert, inter_pert_path)
+            idx.save(pert, inter_pert_path)
             print(f"- Saving interleaved images to {images_filename}")
-            util.save(inter_images, inter_images_path)
+            idx.save(inter_images, inter_images_path)
             print(f"- Saving interleaved metrics to {metrics_filename}")
             inter_metrics.to_csv(inter_metrics_path)
             print(f"- Copying class labels to {labels_filename}")

@@ -1,3 +1,5 @@
+# TODO: Add documentation
+import gzip
 import struct
 
 import numpy as np
@@ -17,6 +19,17 @@ def save_uint8(data, f):
     f.write(struct.pack('BBBB', 0, 0, 0x08, data.ndim))
     f.write(struct.pack('>' + 'I' * data.ndim, *data.shape))
     f.write(data.tobytes())
+
+
+def save(data, path):
+    with gzip.open(path, 'wb') as f:
+        save_uint8(data, f)
+
+
+def load(path):
+    with gzip.open(path, 'rb') as f:
+        data = load_uint8(f)
+    return data
 
 
 if __name__ == '__main__':
@@ -40,7 +53,7 @@ if __name__ == '__main__':
     print(data_.shape)
 
     import matplotlib.pyplot as plt
-    import util
+    from morphomnist import util
 
     for i in np.random.permutation(len(data)):
         util.plot_digit(data[i], plt.subplot(121))

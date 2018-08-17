@@ -49,9 +49,9 @@ if __name__ == '__main__':
         util.plot_digit(pert_images[0])
         plt.show()
         print(pert_images.shape, pert_labels.shape, np.bincount(pert_labels))
-        util.save(pert_images, os.path.join(DATA_ROOT, "pert", filename) + '.gz')
+        idx.save(pert_images, os.path.join(DATA_ROOT, "pert", filename) + '.gz')
 
         label_filename = filename.split('-')[0] + "-pert-idx1-ubyte"
-        util.save(pert_labels, os.path.join(DATA_ROOT, "pert", label_filename) + '.gz')
+        idx.save(pert_labels, os.path.join(DATA_ROOT, "pert", label_filename) + '.gz')
     pool.close()
     pool.join()

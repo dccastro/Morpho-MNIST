@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Ellipse
 
-from . import idx
-
 
 def plot_digit(x, ax=None, title=None, **kwargs):
     if ax is None:
@@ -49,14 +47,3 @@ def plot_parallelogram(top_left, top_right, bottom_right, bottom_left, scale=1.,
         ax = plt.gca()
     corners = [top_left, top_right, bottom_right, bottom_left, top_left]
     ax.plot(*(scale * np.array(corners).T - .5), **kwargs)
-
-
-def save(data, path):
-    with gzip.open(path, 'wb') as f:
-        idx.save_uint8(data, f)
-
-
-def load(path):
-    with gzip.open(path, 'rb') as f:
-        data = idx.load_uint8(f)
-    return data
