@@ -4,7 +4,7 @@ import shutil
 
 import numpy as np
 
-from morphomnist import idx, perturb
+from morphomnist import io, perturb
 from morphomnist.morpho import ImageMorphology
 
 THRESHOLD = .5
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     for subset in ["train", "t10k"]:
         imgs_filename = f"{subset}-images-idx3-ubyte.gz"
         labels_filename = f"{subset}-labels-idx1-ubyte.gz"
-        raw_imgs = idx.load(os.path.join(raw_dir, imgs_filename))
+        raw_imgs = io.load_idx(os.path.join(raw_dir, imgs_filename))
 
         gen = pool.imap(process_image, enumerate(raw_imgs), chunksize=100)
         try:
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             imgs = np.array(imgs)
             dataset_dir = os.path.join(dataset_root, dataset_name)
             os.makedirs(dataset_dir, exist_ok=True)
-            idx.save(imgs, os.path.join(dataset_dir, imgs_filename))
+            io.save_idx(imgs, os.path.join(dataset_dir, imgs_filename))
             shutil.copy(os.path.join(raw_dir, labels_filename), dataset_dir)
     pool.close()
     pool.join()

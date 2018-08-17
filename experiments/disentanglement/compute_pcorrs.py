@@ -10,7 +10,7 @@ from torch.nn import functional as F
 from analysis import correlations
 from experiments import spec_util
 from models import infogan, load_checkpoint
-from morphomnist import idx, measure
+from morphomnist import io, measure
 
 DATA_ROOT = "/vol/biomedic/users/dc315/mnist"
 CHECKPOINT_ROOT = "/data/morphomnist/checkpoints"
@@ -39,8 +39,8 @@ def load_test_data(data_dirs, weights=None):
     images_paths = [os.path.join(data_dir, "t10k-images-idx3-ubyte.gz") for data_dir in data_dirs]
     labels_paths = [os.path.join(data_dir, "t10k-labels-idx1-ubyte.gz") for data_dir in data_dirs]
     metrics = list(map(pd.read_csv, metrics_paths))
-    images = list(map(idx.load, images_paths))
-    labels = list(map(idx.load, labels_paths))
+    images = list(map(io.load_idx, images_paths))
+    labels = list(map(io.load_idx, labels_paths))
     if len(data_dirs) > 1:
         if weights is not None:
             weights = np.array(weights) / np.sum(weights)
@@ -85,7 +85,7 @@ def compute_partial_correlation(gan: infogan.InfoGAN, images, metrics, cols):
 
 
 def add_swel_frac(data_dir, metrics):
-    test_pert = idx.load(os.path.join(data_dir, "t10k-pert-idx1-ubyte.gz"))
+    test_pert = io.load_idx(os.path.join(data_dir, "t10k-pert-idx1-ubyte.gz"))
     metrics['swel'] = (test_pert == 3).astype(int)
     metrics['frac'] = (test_pert == 4).astype(int)
 

@@ -4,7 +4,7 @@ import shutil
 import numpy as np
 import pandas as pd
 
-from morphomnist import idx
+from morphomnist import io
 
 
 def interleave_dfs(dfs, indices, keys):
@@ -29,7 +29,7 @@ if __name__ == '__main__':
             data_dirs = [os.path.join(data_root, dataset_names[i]) for i in pairing]
             imgs_paths = [os.path.join(data_dir, images_filename) for data_dir in data_dirs]
             metrics_paths = [os.path.join(data_dir, metrics_filename) for data_dir in data_dirs]
-            all_images = np.array([idx.load(path) for path in imgs_paths])
+            all_images = np.array([io.load_idx(path) for path in imgs_paths])
             all_metrics = [pd.read_csv(path, index_col='index') for path in metrics_paths]
 
             num = all_images[0].shape[0]
@@ -46,9 +46,9 @@ if __name__ == '__main__':
             inter_metrics_path = os.path.join(inter_dir, metrics_filename)
             inter_labels_path = os.path.join(inter_dir, labels_filename)
             print(f"- Saving perturbation labels to {pert_filename}")
-            idx.save(pert, inter_pert_path)
+            io.save_idx(pert, inter_pert_path)
             print(f"- Saving interleaved images to {images_filename}")
-            idx.save(inter_images, inter_images_path)
+            io.save_idx(inter_images, inter_images_path)
             print(f"- Saving interleaved metrics to {metrics_filename}")
             inter_metrics.to_csv(inter_metrics_path)
             print(f"- Copying class labels to {labels_filename}")

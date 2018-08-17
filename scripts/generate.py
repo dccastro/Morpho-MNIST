@@ -5,7 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from morphomnist import idx, perturb, util
+from morphomnist import io, perturb, util
 from morphomnist.morpho import ImageMorphology
 
 DATA_ROOT = "/vol/biomedic/users/dc315/mnist"
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     pool = multiprocessing.Pool()
     for filename in filenames:
-        images = idx.load(os.path.join(DATA_ROOT, "raw", filename))
+        images = io.load_idx(os.path.join(DATA_ROOT, "raw", filename))
 
         pert_results = pool.starmap(process_image, zip(np.arange(len(images)), images),
                                     chunksize=1250)
@@ -48,9 +48,9 @@ if __name__ == '__main__':
         util.plot_digit(pert_images[0])
         plt.show()
         print(pert_images.shape, pert_labels.shape, np.bincount(pert_labels))
-        idx.save(pert_images, os.path.join(DATA_ROOT, "pert", filename) + '.gz')
+        io.save_idx(pert_images, os.path.join(DATA_ROOT, "pert", filename) + '.gz')
 
         label_filename = filename.split('-')[0] + "-pert-idx1-ubyte"
-        idx.save(pert_labels, os.path.join(DATA_ROOT, "pert", label_filename) + '.gz')
+        io.save_idx(pert_labels, os.path.join(DATA_ROOT, "pert", label_filename) + '.gz')
     pool.close()
     pool.join()

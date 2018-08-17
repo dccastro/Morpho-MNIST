@@ -21,13 +21,13 @@ def _save_uint8(data, f):
     f.write(data.tobytes())
 
 
-def save(data, path):
+def save_idx(data, path):
     open_fcn = gzip.open if path.endswith('.gz') else open
     with open_fcn(path, 'wb') as f:
         _save_uint8(data, f)
 
 
-def load(path):
+def load_idx(path):
     open_fcn = gzip.open if path.endswith('.gz') else open
     with open_fcn(path, 'rb') as f:
         return _load_uint8(f)
@@ -38,9 +38,9 @@ if __name__ == '__main__':
     MNIST_FILE = "/vol/biomedic/users/dc315/mnist/raw/train-images-idx3-ubyte.gz"
     TEST_FILE = "test"
 
-    data = load(MNIST_FILE)
-    save(data, TEST_FILE)
-    data_ = load(TEST_FILE)
+    data = load_idx(MNIST_FILE)
+    save_idx(data, TEST_FILE)
+    data_ = load_idx(TEST_FILE)
 
     import os
     os.remove(TEST_FILE)
