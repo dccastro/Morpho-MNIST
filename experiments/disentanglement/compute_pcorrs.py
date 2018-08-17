@@ -69,7 +69,7 @@ def compute_partial_correlation(gan: infogan.InfoGAN, images, metrics, cols):
     dvs = metrics[cols].values
     for cat in range(splits[0]):
         ivs = np.column_stack([phi_[:, cat], mu, gamma_, np.ones(phi.shape[0])])
-        pcorr[:, cat] = correlations.partial_correlation_matrix(ivs, dvs, which=[cat]).squeeze()
+        pcorr[:, cat] = correlations.partial_correlation_matrix(ivs, dvs, which=[0]).squeeze()
 
     # Continuous codes
     ivs = np.column_stack([phi_, mu, gamma_])
