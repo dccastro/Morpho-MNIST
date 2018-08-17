@@ -19,16 +19,18 @@ def plot_digit(x, ax=None, title=None, **kwargs):
         ax.set_title(title)
 
 
-def plot_grid(imgs, nrow=None, **kwargs):
+def plot_grid(imgs, nrow=None, digit_kw=None, **kwargs):
     num = imgs.shape[0]
     if nrow is None:
         nrow = int(np.floor(np.sqrt(num)))
     ncol = int(np.ceil(num / nrow))
     fig, axs = plt.subplots(nrow, ncol, **kwargs)
     axs = np.atleast_1d(axs).T
+    if digit_kw is None:
+        digit_kw = {}
     for i in range(num):
         ax = axs.flat[i]
-        plot_digit(imgs[i], ax)
+        plot_digit(imgs[i], ax, **digit_kw)
         ax.axis('off')
     for ax in axs.flat[num:]:
         ax.set_visible(False)
