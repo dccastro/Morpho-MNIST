@@ -6,13 +6,13 @@ import pandas as pd
 from .morpho import bounding_parallelogram, ImageMoments, ImageMorphology
 
 
-def measure_image(image: np.ndarray, threshold: float = .5, scale: int = 4, bound_frac: float = .02,
+def measure_image(image, threshold: float = .5, scale: int = 4, bound_frac: float = .02,
                   verbose=True):
     """Computes morphometrics for a single image.
 
     Parameters
     ----------
-    image : numpy.ndarray (28, 28)
+    image : (H, W) array_like
         Input image.
     threshold : float, optional
         A relative threshold between 0 and 1. The upsampled image will be binarised at this fraction
@@ -40,6 +40,7 @@ def measure_image(image: np.ndarray, threshold: float = .5, scale: int = 4, boun
     height : float
         Height of the bounding parallelogram.
     """
+    image = np.asarray(image)
     morph = ImageMorphology(image, threshold, scale)
     moments = ImageMoments(morph.hires_image)
     thickness = morph.mean_thickness
@@ -65,14 +66,14 @@ def _measure_image_unpack(arg):
     return measure_image(*arg)
 
 
-def measure_batch(images: np.ndarray, threshold: float = .5, scale: int = 4,
-                  bound_frac: float = .02, pool: multiprocessing.Pool = None, chunksize: int = 100):
+def measure_batch(images, threshold: float = .5, scale: int = 4, bound_frac: float = .02,
+                  pool: multiprocessing.Pool = None, chunksize: int = 100) -> pd.DataFrame:
     """Computes morphometrics for a batch of images.
 
     Parameters
     ----------
-    images : numpy.ndarray (N, 28, 28)
-        Input image batch.
+    images : (N, H, W) array_like
+        Input image batch, indexed along the first dimension.
     threshold : float, optional
         A relative threshold between 0 and 1. The upsampled image will be binarised at this fraction
         between its minimum and maximum values.
@@ -104,6 +105,7 @@ def measure_batch(images: np.ndarray, threshold: float = .5, scale: int = 4,
     If the `tqdm` package is installed, this function will display a fancy progress bar with ETA.
     Otherwise, it will print a plain text progress message.
     """
+    images = np.asarray(images)
     args = ((img, threshold, scale, bound_frac, False) for img in images)
     if pool is None:
         gen = map(_measure_image_unpack, args)
