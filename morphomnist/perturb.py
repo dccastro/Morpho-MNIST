@@ -16,7 +16,7 @@ class Perturbation:
 
         Returns
         -------
-        np.ndarray
+        (scale*H, scale*W) numpy.ndarray
             The perturbed high-resolution image. Call `morph.downscale(...)` to transform it back
             to low-resolution.
         """
@@ -68,14 +68,14 @@ class Deformation(Perturbation):
 
         Parameters
         ----------
-        xy : np.ndarray
+        xy : (H*W, 2) numpy.ndarray
             Regular coordinate grid in output space.
         morph : ImageMorphology
             Morphological pipeline computed for the input image.
 
         Returns
         -------
-        np.ndarray
+        (H*W, 2) numpy.ndarray
             Warped coordinates in input space.
         """
         raise NotImplementedError
