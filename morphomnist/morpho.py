@@ -22,27 +22,27 @@ class ImageMorphology:
 
     Attributes
     ----------
-    image : np.ndarray (28, 28)
+    image : (H, W) numpy.ndarray
         Input image.
     threshold : float
         Relative binarisation threshold.
     scale : int
         Upscaling factor.
-    hires_image : np.ndarray (scale*28, scale*28)
+    hires_image : (scale*H, scale*W) numpy.ndarray
         Upscaled version of `image`.
-    binary_image : np.ndarray (scale*28, scale*28)
+    binary_image : (scale*H, scale*W) numpy.ndarray
         Thresholded `hires_image`.
-    skeleton : np.ndarray (scale*28, scale*28)
+    skeleton : (scale*H, scale*W) numpy.ndarray
         Morphological skeleton of `binary_image`.
-    distance_map : np.ndarray (scale*28, scale*28)
+    distance_map : (scale*H, scale*W) numpy.ndarray
         Euclidean distance map from the boundaries in `binary_image`.
     """
 
-    def __init__(self, image: np.ndarray, threshold: float = .5, scale: int = 1):
+    def __init__(self, image, threshold: float = .5, scale: int = 1):
         """
         Parameters
         ----------
-        image : numpy.ndarray (28, 28)
+        image : (H, W) array_like
             Input image.
         threshold : float, optional
             A relative threshold between 0 and 1. The upsampled image will be binarised at this fraction
@@ -50,7 +50,7 @@ class ImageMorphology:
         scale : int, optional
             Upscaling factor for subpixel morphological analysis (>=1).
         """
-        self.image = image
+        self.image = np.asarray(image)
         self.threshold = threshold
         self.scale = scale
         self.hires_image, self.binary_image, self.skeleton, self.distance_map = \
@@ -81,19 +81,20 @@ class ImageMorphology:
         thickness = 2. * np.median(self.distance_map[self.skeleton]) / self.scale  # type: float
         return thickness
 
-    def downscale(self, image: np.ndarray) -> np.ndarray:
+    def downscale(self, image) -> np.ndarray:
         """Convenience method to map an image in the hi-res scale down to the original MNIST format.
 
         Parameters
         ----------
-        image : np.ndarray (scale*28, scale*28)
+        image : (scale*H, scale*W) array_like
             High-resolution input image.
 
         Returns
         -------
-        np.ndarray
+        (H, W) numpy.ndarray
             Low-resolution `uint8` image.
         """
+        image = np.asarray(image)
         down_img = transform.pyramid_reduce(image, downscale=self.scale, order=3)  # type: np.ndarray
         return (255. * down_img).astype(np.uint8)
 
@@ -118,10 +119,10 @@ class ImageMoments:
         """
         Parameters
         ----------
-        img : np.ndarray
+        img : (H, W) array_like
             Input image whose moments to compute.
         """
-        img = img.astype(float)
+        img = np.asarray(img, dtype=float)
         x = np.arange(img.shape[1])[None, :]
         y = np.arange(img.shape[0])[:, None]
         m00 = img.sum()
@@ -186,12 +187,12 @@ def _vert_cdf(img: np.ndarray, y: np.ndarray):
     return counts / img.sum()
 
 
-def bounding_parallelogram(img: np.ndarray, frac: float, moments: ImageMoments = None):
+def bounding_parallelogram(img, frac: float, moments: ImageMoments = None):
     """Estimates a bounding parallelogram for the given image.
 
     Parameters
     ----------
-    img : np.ndarray
+    img : (H, W) array_like
         Input image.
     frac : float
         Fraction of image mass to discard along each dimension, for robustness to outliers.
@@ -200,12 +201,12 @@ def bounding_parallelogram(img: np.ndarray, frac: float, moments: ImageMoments =
 
     Returns
     -------
-    Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+    Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray]
         Corners of the parallelogram as `(x, y)` arrays, listed clockwise: top-left, top-right,
         bottom-right, and bottom-left.
     """
+    img = np.asarray(img, dtype=float)
     height, width = img.shape
-    img = img.astype(float)
     x = np.arange(width)[None, :]
     y = np.arange(height)[:, None]
 
