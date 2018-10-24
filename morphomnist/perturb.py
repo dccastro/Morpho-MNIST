@@ -5,44 +5,104 @@ from . import skeleton
 from .morpho import ImageMorphology
 
 
-class Perturbation(object):
+class Perturbation:
     def __call__(self, morph: ImageMorphology) -> np.ndarray:
+        """Apply the perturbation.
+
+        Parameters
+        ----------
+        morph : ImageMorphology
+            Morphological pipeline computed for the input image.
+
+        Returns
+        -------
+        np.ndarray
+            The perturbed high-resolution image. Call `morph.downscale(...)` to transform it back
+            to low-resolution.
+        """
         raise NotImplementedError
 
 
 class Thinning(Perturbation):
-    def __init__(self, amount):
+    """Thin a digit by a specified proportion of its thickness."""
+
+    def __init__(self, amount: float):
+        """
+        Parameters
+        ----------
+        amount : float
+            Amount of thinning relative to the estimated thickness (e.g. `amount=0.7` will
+            reduce the thickness by approximately 70%).
+        """
         self.amount = amount
 
-    def __call__(self, morph: ImageMorphology):
+    def __call__(self, morph: ImageMorphology) -> np.ndarray:
         radius = int(self.amount * morph.scale * morph.mean_thickness / 2.)
         return morphology.erosion(morph.binary_image, morphology.disk(radius))
 
 
 class Thickening(Perturbation):
-    def __init__(self, amount):
+    """Thicken a digit by a specified proportion of its thickness."""
+
+    def __init__(self, amount: float):
+        """
+        Parameters
+        ----------
+        amount : float
+            Amount of thinning relative to the estimated thickness (e.g. `amount=1.0` will
+            increase the thickness by approximately 100%).
+        """
         self.amount = amount
 
-    def __call__(self, morph: ImageMorphology):
+    def __call__(self, morph: ImageMorphology) -> np.ndarray:
         radius = int(self.amount * morph.scale * morph.mean_thickness / 2.)
         return morphology.dilation(morph.binary_image, morphology.disk(radius))
 
 
 class Deformation(Perturbation):
-    def __call__(self, morph: ImageMorphology):
+    def __call__(self, morph: ImageMorphology) -> np.ndarray:
         return transform.warp(morph.binary_image, lambda xy: self.warp(xy, morph))
 
-    def warp(self, xy: np.ndarray, morph: ImageMorphology):
+    def warp(self, xy: np.ndarray, morph: ImageMorphology) -> np.ndarray:
+        """Transform a regular coordinate grid to the deformed coordinates in input space.
+
+        Parameters
+        ----------
+        xy : np.ndarray
+            Regular coordinate grid in output space.
+        morph : ImageMorphology
+            Morphological pipeline computed for the input image.
+
+        Returns
+        -------
+        np.ndarray
+            Warped coordinates in input space.
+        """
         raise NotImplementedError
 
 
 class Swelling(Deformation):
+    """Create a local swelling at a random location along the skeleton.
+
+    Coordinates within `radius` :math:`R` of the centre location :math:`r_0` are warped according
+    to a radial power transform: :math:`f(r) = r_0 + (r-r_0)(|r-r_0|/R)^{\gamma-1}`, where
+    :math:`\gamma` is the `strength`.
+    """
+
     def __init__(self, strength: float, radius: float):
+        """
+        Parameters
+        ----------
+        strength : float
+            Exponent of radial power transform (>1).
+        radius : float
+            Radius to be affected by the swelling, relative to low-resolution pixel scale.
+        """
         self.strength = strength
         self.radius = radius
         self.loc_sampler = skeleton.LocationSampler()
 
-    def warp(self, xy: np.ndarray, morph: ImageMorphology):
+    def warp(self, xy: np.ndarray, morph: ImageMorphology) -> np.ndarray:
         centre = self.loc_sampler.sample(morph)[::-1]
         radius = (self.radius * np.sqrt(morph.mean_thickness) / 2.) * morph.scale
 
@@ -54,16 +114,32 @@ class Swelling(Deformation):
 
 
 class Fracture(Perturbation):
+    """Add fractures to a digit.
+
+    Fractures are added at random locations along the skeleton, while avoiding stroke tips and
+    forks, and are locally perpendicular to the pen stroke.
+    """
+
     _ANGLE_WINDOW = 2
     _FRAC_EXTENSION = .5
 
     def __init__(self, thickness: float = 1.5, prune: float = 2, num_frac: int = 1):
+        """
+        Parameters
+        ----------
+        thickness : float
+            Thickness of the fractures, in low-resolution pixel scale.
+        prune : float
+            Radius to avoid around stroke tips and forks, in low-resolution pixel scale.
+        num_frac : int
+            Number of fractures to add.
+        """
         self.thickness = thickness
         self.prune = prune
         self.num_frac = num_frac
         self.loc_sampler = skeleton.LocationSampler(prune, prune)
 
-    def __call__(self, morph: ImageMorphology):
+    def __call__(self, morph: ImageMorphology) -> np.ndarray:
         up_thickness = self.thickness * morph.scale
         r = int(np.ceil((up_thickness - 1) / 2))
         brush = ~morphology.disk(r).astype(bool)
