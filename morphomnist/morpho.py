@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 from scipy.ndimage import filters
 from skimage import morphology, transform
@@ -15,8 +17,39 @@ def _process_img_morph(img, threshold=.5, scale=1):
     return img, bin_img, skel, dist_map
 
 
-class ImageMorphology(object):
+class ImageMorphology:
+    """Representation of the morphological processing pipeline applied to an image.
+
+    Attributes
+    ----------
+    image : np.ndarray (28, 28)
+        Input image.
+    threshold : float
+        Relative binarisation threshold.
+    scale : int
+        Upscaling factor.
+    hires_image : np.ndarray (scale*28, scale*28)
+        Upscaled version of `image`.
+    binary_image : np.ndarray (scale*28, scale*28)
+        Thresholded `hires_image`.
+    skeleton : np.ndarray (scale*28, scale*28)
+        Morphological skeleton of `binary_image`.
+    distance_map : np.ndarray (scale*28, scale*28)
+        Euclidean distance map from the boundaries in `binary_image`.
+    """
+
     def __init__(self, image: np.ndarray, threshold: float = .5, scale: int = 1):
+        """
+        Parameters
+        ----------
+        image : numpy.ndarray (28, 28)
+            Input image.
+        threshold : float, optional
+            A relative threshold between 0 and 1. The upsampled image will be binarised at this fraction
+            between its minimum and maximum values.
+        scale : int, optional
+            Upscaling factor for subpixel morphological analysis (>=1).
+        """
         self.image = image
         self.threshold = threshold
         self.scale = scale
@@ -24,30 +57,70 @@ class ImageMorphology(object):
             _process_img_morph(self.image, self.threshold, self.scale)
 
     @property
-    def area(self):
+    def area(self) -> float:
+        """Total area/image mass."""
         return self.binary_image.sum() / self.scale ** 2
 
     @property
-    def stroke_length(self):
+    def stroke_length(self) -> float:
+        """Length of the estimated skeleton."""
         skel = self.skeleton.astype(float)
         conv = filters.correlate(skel, _SKEL_LEN_MASK, mode='constant')
-        return np.einsum('ij,ij->', conv, skel) / self.scale
+        up_length = np.einsum('ij,ij->', conv, skel)  # type: float
+        return up_length / self.scale
 
     @property
-    def mean_thickness(self):
-        return 2. * np.mean(self.distance_map[self.skeleton]) / self.scale
+    def mean_thickness(self) -> float:
+        """Mean thickness along the skeleton."""
+        thickness = 2. * np.mean(self.distance_map[self.skeleton]) / self.scale  # type: float
+        return thickness
 
     @property
-    def median_thickness(self):
-        return 2. * np.median(self.distance_map[self.skeleton]) / self.scale
+    def median_thickness(self) -> float:
+        """Median thickness along the skeleton."""
+        thickness = 2. * np.median(self.distance_map[self.skeleton]) / self.scale  # type: float
+        return thickness
 
-    def downscale(self, image):
+    def downscale(self, image: np.ndarray) -> np.ndarray:
+        """Convenience method to map an image in the hi-res scale down to the original MNIST format.
+
+        Parameters
+        ----------
+        image : np.ndarray (scale*28, scale*28)
+            High-resolution input image.
+
+        Returns
+        -------
+        np.ndarray
+            Low-resolution `uint8` image.
+        """
         down_img = transform.pyramid_reduce(image, downscale=self.scale, order=3)  # type: np.ndarray
         return (255. * down_img).astype(np.uint8)
 
 
-class ImageMoments(object):
+class ImageMoments:
+    """First- and second-order image moments.
+
+    This class assumes that the vertical direction is indexed along the array's first axis,
+    and horizontal along the second.
+
+    Attributes
+    ----------
+    m00 : float
+        Total mass.
+    m10, m01 : float
+        First-order moments (centroid).
+    u20, u11, u02 : float
+        Second-order central moments (covariance).
+    """
+
     def __init__(self, img: np.ndarray):
+        """
+        Parameters
+        ----------
+        img : np.ndarray
+            Input image whose moments to compute.
+        """
         img = img.astype(float)
         x = np.arange(img.shape[1])[None, :]
         y = np.arange(img.shape[0])[:, None]
@@ -65,30 +138,36 @@ class ImageMoments(object):
         self.u02 = m02 - m01 ** 2
 
     @property
-    def centroid(self):
+    def centroid(self) -> Tuple[float, float]:
+        """Image centroid."""
         return self.m10, self.m01
 
     @property
-    def covariance(self):
+    def covariance(self) -> Tuple[float, float, float]:
+        """Image's horizontal variance, cross-covariance and vertical variance."""
         return self.u20, self.u11, self.u02
 
     @property
-    def axis_lengths(self):
+    def axis_lengths(self) -> Tuple[float, float]:
+        """Lenghts of the image's major and minor axes."""
         delta = .5 * np.hypot(2. * self.u11, self.u20 - self.u02)
         eig1 = .5 * (self.u20 + self.u02) + delta
         eig2 = .5 * (self.u20 + self.u02) - delta
         return np.sqrt(eig1), np.sqrt(eig2)
 
     @property
-    def angle(self):
+    def angle(self) -> float:
+        """Orientation of the image's major axis."""
         return .5 * np.arctan2(2. * self.u11, self.u20 - self.u02)
 
     @property
-    def horizontal_shear(self):
+    def horizontal_shear(self) -> float:
+        """Image's horizontal shear."""
         return self.u11 / self.u02
 
     @property
-    def vertical_shear(self):
+    def vertical_shear(self) -> float:
+        """Image's vertical shear."""
         return self.u11 / self.u20
 
 
@@ -108,6 +187,23 @@ def _vert_cdf(img: np.ndarray, y: np.ndarray):
 
 
 def bounding_parallelogram(img: np.ndarray, frac: float, moments: ImageMoments = None):
+    """Estimates a bounding parallelogram for the given image.
+
+    Parameters
+    ----------
+    img : np.ndarray
+        Input image.
+    frac : float
+        Fraction of image mass to discard along each dimension, for robustness to outliers.
+    moments : ImageMoments, optional
+        Pre-computed image moments, if available.
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+        Corners of the parallelogram as `(x, y)` arrays, listed clockwise: top-left, top-right,
+        bottom-right, and bottom-left.
+    """
     height, width = img.shape
     img = img.astype(float)
     x = np.arange(width)[None, :]
