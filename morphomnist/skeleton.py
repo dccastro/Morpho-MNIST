@@ -7,12 +7,12 @@ from .morpho import ImageMoments, ImageMorphology
 _NB_MASK = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]], int)
 
 
-def get_angle(skel: np.ndarray, i: int, j: int, r: int) -> float:
+def get_angle(skel, i: int, j: int, r: int) -> float:
     """Estimates the local angle of the skeleton inside a square window.
 
     Parameters
     ----------
-    skel : np.ndarray
+    skel : (H, W) array_like
         Input skeleton image.
     i : int
         Vertical coordinate of the window centre.
@@ -26,6 +26,7 @@ def get_angle(skel: np.ndarray, i: int, j: int, r: int) -> float:
     float
         The estimated angle, in radians.
     """
+    skel = np.asarray(skel)
     skel = np.pad(skel, pad_width=r, mode='constant', constant_values=0)
     mask = np.ones([2 * r + 1, 2 * r + 1])
     nbs = skel[i:i + 2*r + 1, j:j + 2*r + 1]
@@ -33,39 +34,38 @@ def get_angle(skel: np.ndarray, i: int, j: int, r: int) -> float:
     return angle
 
 
-def num_neighbours(skel: np.ndarray) -> np.ndarray:
+def num_neighbours(skel) -> np.ndarray:
     """Computes the number of neighbours of each skeleton pixel.
 
     Parameters
     ----------
-    skel : np.ndarray
+    skel : (H, W) array_like
         Input skeleton image.
 
     Returns
     -------
-    np.ndarray
-        Array containing the numbers of neighbours at each skeleton pixel and 0 elsewhere,
-        with the same shape as `skel`.
+    (H, W) array_like
+        Array containing the numbers of neighbours at each skeleton pixel and 0 elsewhere.
     """
-    skel = skel.astype(int)
+    skel = np.asarray(skel, dtype=int)
     return filters.convolve(skel, _NB_MASK, mode='constant') * skel
 
 
-def erase(skel: np.ndarray, seeds: np.ndarray, r: int) -> np.ndarray:
+def erase(skel, seeds, r: int) -> np.ndarray:
     """Erases pixels around given locations in a skeleton image.
 
     Parameters
     ----------
-    skel : np.ndarray
+    skel : (H, W) array_like
         Input skeleton image.
-    seeds : np.ndarray
-        Locations around which to erase.
+    seeds : (H, W) array_like
+        Binary mask with locations around which to erase.
     r : int
         Radius to erase around `seeds`.
 
     Returns
     -------
-    np.ndarray
+    (H, W) numpy.ndarray
         Processed skeleton image, of the same shape as `skel`.
     """
     erased = np.pad(skel, pad_width=r, mode='constant', constant_values=0)
@@ -102,7 +102,7 @@ class LocationSampler(object):
 
         Returns
         -------
-        np.ndarray
+        (2,) or (num, 2) numpy.ndarray
             Vertical and horizontal indices of the sampled locations. If `num` is not `None`,
             points are indexed along the first axis.
         """
