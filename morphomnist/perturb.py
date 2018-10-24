@@ -26,11 +26,11 @@ class Perturbation:
 class Thinning(Perturbation):
     """Thin a digit by a specified proportion of its thickness."""
 
-    def __init__(self, amount: float):
+    def __init__(self, amount: float = .7):
         """
         Parameters
         ----------
-        amount : float
+        amount : float, optional
             Amount of thinning relative to the estimated thickness (e.g. `amount=0.7` will
             reduce the thickness by approximately 70%).
         """
@@ -44,11 +44,11 @@ class Thinning(Perturbation):
 class Thickening(Perturbation):
     """Thicken a digit by a specified proportion of its thickness."""
 
-    def __init__(self, amount: float):
+    def __init__(self, amount: float = 1):
         """
         Parameters
         ----------
-        amount : float
+        amount : float, optional
             Amount of thinning relative to the estimated thickness (e.g. `amount=1.0` will
             increase the thickness by approximately 100%).
         """
@@ -89,13 +89,13 @@ class Swelling(Deformation):
     :math:`\gamma` is the `strength`.
     """
 
-    def __init__(self, strength: float, radius: float):
+    def __init__(self, strength: float = 3, radius: float = 7):
         """
         Parameters
         ----------
-        strength : float
+        strength : float, optional
             Exponent of radial power transform (>1).
-        radius : float
+        radius : float, optional
             Radius to be affected by the swelling, relative to low-resolution pixel scale.
         """
         self.strength = strength
@@ -123,15 +123,15 @@ class Fracture(Perturbation):
     _ANGLE_WINDOW = 2
     _FRAC_EXTENSION = .5
 
-    def __init__(self, thickness: float = 1.5, prune: float = 2, num_frac: int = 1):
+    def __init__(self, thickness: float = 1.5, prune: float = 2, num_frac: int = 3):
         """
         Parameters
         ----------
-        thickness : float
+        thickness : float, optional
             Thickness of the fractures, in low-resolution pixel scale.
-        prune : float
+        prune : float, optional
             Radius to avoid around stroke tips and forks, in low-resolution pixel scale.
-        num_frac : int
+        num_frac : int, optional
             Number of fractures to add.
         """
         self.thickness = thickness
