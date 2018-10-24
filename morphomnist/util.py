@@ -10,8 +10,8 @@ def plot_digit(img, ax=None, title=None, **kwargs):
 
     Parameters
     ----------
-    img : np.ndarray or torch.Tensor
-        2D array or tensor containing the digit image.
+    img : (H, W) array_like
+        2D array containing the digit image.
     ax : matplotlib.axes.Axes, optional
         Axes onto which to plot. Defaults to current axes.
     title : str, optional
@@ -23,7 +23,7 @@ def plot_digit(img, ax=None, title=None, **kwargs):
         ax = plt.gca()
     def_kwargs = dict(cmap='gray_r')
     def_kwargs.update(**kwargs)
-    ax.imshow(img.squeeze(), **def_kwargs)
+    ax.imshow(np.asarray(img).squeeze(), **def_kwargs)
     ax.xaxis.set_visible(False)
     ax.yaxis.set_visible(False)
     if title is not None:
@@ -35,8 +35,8 @@ def plot_grid(imgs, nrow=None, digit_kw=None, **kwargs):
 
     Parameters
     ----------
-    imgs : np.ndarray or torch.Tensor
-        3D array or tensor containing the digit images, indexed along the first axis.
+    imgs : (N, H, W) array_like
+        3D array containing the digit images, indexed along the first axis.
     nrow : int, optional
         Number of rows. If `None`, will attempt to make a square grid.
     digit_kw : dict, optional
@@ -46,9 +46,10 @@ def plot_grid(imgs, nrow=None, digit_kw=None, **kwargs):
 
     Returns
     -------
-    Tuple[matplotlib.figure.Figure, np.ndarray[matplotlib.axes.Axes]]
+    Tuple[matplotlib.figure.Figure, numpy.ndarray[matplotlib.axes.Axes]]
         The created figure and subplot axes.
     """
+    imgs = np.asarray(imgs)
     num = imgs.shape[0]
     if nrow is None:
         nrow = int(np.floor(np.sqrt(num)))
