@@ -29,7 +29,7 @@ If you use these tools or datasets in your publications, please consider citing 
 
 ## Datasets
 
-We distribute the datasets in `.zip` files containing:
+We distribute the datasets in `.gz` files containing:
 
 - `[train|t10k]-images-idx3-ubyte.gz`: images
 - `[train|t10k]-labels-idx1-ubyte.gz`: digit labels, copied from original MNIST
