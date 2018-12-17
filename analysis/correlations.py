@@ -21,34 +21,29 @@ def correlation(x, y):
     return x_.T @ y_ / x.shape[0]
 
 
-def partial_correlation(x, y, control, use_statsmodels=False):
-    """Sample partial correlation between two variables, controlling for confounding variables.
+def partial_correlations(ivs, dv):
+    """Sample partial correlations between two variables, controlling for confounding variables.
 
     Parameters
     ----------
-    x, y : (N,) array_like
-        Variables whose partial correlation to compute.
-    control : (N, M) array_like
-        Confounding variables to control for.
-    use_statsmodels : bool, optional
-        If True, correlate the residuals from regressing `control` onto `x` and `y` using the
-        `statsmodels` library, otherwise use the precision matrix explicitly, with identical
-        results.
+    dv : (N,) array_like
+        Target dependent variable.
+    ivs : (N, M) array_like
+        Independent variables. The partial correlation will be computed for each column in turn,
+        while controlling for the remaining columns.
 
     Returns
     -------
-    float
-        The partial correlation, between -1 and 1.
+    (M,) np.ndarray
+        The partial correlations, between -1 and 1.
     """
-    if use_statsmodels:
-        import statsmodels.api as sm
-        res_x = sm.OLS(x, control).fit().resid
-        res_y = sm.OLS(y, control).fit().resid
-        return correlation(res_x, res_y)
-    else:
-        var = np.column_stack([y, x, control])
-        prec = np.linalg.inv(var.T @ var)
-        return -prec[0, 1] / np.sqrt(prec[0, 0] * prec[1, 1])
+    ivs, dv = np.asarray(ivs), np.asarray(dv)
+    if dv.ndim == 1:
+        dv = dv[:, None]
+    var = np.column_stack([dv, ivs])
+    var -= var.mean(axis=0)
+    prec = np.linalg.inv(var.T @ var)
+    return -prec[0, 1:] / np.sqrt(prec[0, 0] * np.diag(prec)[1:])
 
 
 def partial_correlation_matrix(ivs, dvs, which=None):
@@ -75,25 +70,16 @@ def partial_correlation_matrix(ivs, dvs, which=None):
     ivs, dvs = np.asarray(ivs), np.asarray(dvs)
     if dvs.ndim == 1:
         dvs = dvs[:, None]
-    if which is None:
-        which = np.arange(ivs.shape[1])
-    else:
-        which = np.atleast_1d(which)
-    nx, ny = len(which), dvs.shape[1]
-    pcorr = np.zeros([ny, nx])
-    for j, w in enumerate(which):
-        iv = ivs[:, w]
-        control = np.c_[ivs[:, :w], ivs[:, w + 1:]]
-        for i in range(ny):
-            dv = dvs[:, i]
-            pcorr[i, j] = partial_correlation(iv, dv, control)
+    pcorr = np.asarray([partial_correlations(ivs, dv) for dv in dvs.T])
+    if which is not None:
+        pcorr = pcorr[..., np.atleast_1d(which)]
     return pcorr
 
 
 if __name__ == '__main__':
     N = 1000
-    x = np.random.randn(N, 5)
-    y = np.random.randn(N, 3)
+    x = np.random.randn(N, 5) + 1.
+    y = x @ np.random.randn(5, 3) + np.random.randn(N, 3)
     print(partial_correlation_matrix(x, y))
     print(partial_correlation_matrix(x, y, [1, 2]))
     print(partial_correlation_matrix(x, y, [1]))
