@@ -23,25 +23,33 @@ def set_size(w, h, ax=None):
     ax.figure.set_size_inches(figw, figh)
 
 
-def plot_partial_correlation(dims, pcorr, cols, hrule=None):
-    corr_plots.hinton(pcorr, cmap='RdBu')
+def plot_partial_correlation(dims, pcorr, cols, hrule=None, ax=None):
+    ax = plt.gca() if ax is None else ax
+    corr_plots.hinton(pcorr, cmap='RdBu', ax=ax)
 
     cat_dim, cont_dim, bin_dim = dims[:3]
 
     div_kwargs = dict(c='.8', lw=1, zorder=-1)
-    plt.axvline(cat_dim - .5, **div_kwargs)
-    plt.axvline(cat_dim + cont_dim - .5, **div_kwargs)
-    if hrule is not None:
-        plt.axhline(hrule - .5, **div_kwargs)
+    if cat_dim > 0 and (cont_dim > 0 or bin_dim > 0):  # Cat vs. cont/bin separator
+        ax.axvline(cat_dim - .5, **div_kwargs)
+    if cont_dim > 0 and bin_dim > 0:  # Cont vs. bin separator
+        ax.axvline(cat_dim + cont_dim - .5, **div_kwargs)
+    if hrule is not None:  # Horizontal separator
+        ax.axhline(hrule - .5, **div_kwargs)
 
-    plt.yticks(np.arange(pcorr.shape[0]), cols)
-    plt.xticks(np.arange(pcorr.shape[1]),
-               [f"$c_{{1}}^{{({i + 1})}}$" for i in range(cat_dim)]
-               + [f"$c_{{{i + 2}}}^{{}}$" for i in range(cont_dim + bin_dim)])
-    plt.tick_params(bottom=False, labelbottom=False, top=True, labeltop=True)
+    # If no categorical, start numbering continuous/binary from 1
+    idx_offset = int(cat_dim > 0)
+
+    ax.set_yticks(np.arange(pcorr.shape[0]))
+    ax.set_yticklabels(cols)
+    ax.set_xticks(np.arange(pcorr.shape[1]))
+    ax.set_xticklabels(
+       [f"$c_{{1}}^{{({i + 1})}}$" for i in range(cat_dim)] +
+       [f"$c_{{{i + 1 + idx_offset}}}^{{}}$" for i in range(cont_dim + bin_dim)])
+    ax.tick_params(bottom=False, labelbottom=False, top=True, labeltop=True)
 
     def add_xlabel(x, s):
-        plt.text(x, pcorr.shape[0] - .5 + .2, s, ha='center', va='top', size='small')
+        ax.text(x, pcorr.shape[0] - .5 + .2, s, ha='center', va='top', size='small')
 
     cat_pos = (cat_dim - 1.) / 2.
     cont_pos = cat_dim + (cont_dim - 1.) / 2.
@@ -71,6 +79,7 @@ def main(pcorr_path, figure_dir=None):
     plt.figure(figsize=fig_size)
 
     plot_partial_correlation(latent_dims, payload['pcorr'], payload['cols'], payload['hrule'])
+    os.makedirs(figure_dir, exist_ok=True)
     if figure_dir is not None:
         filename = pcorr_filename.split('.')[0] + ".pdf"
         shape = np.array(payload['pcorr'].shape)
