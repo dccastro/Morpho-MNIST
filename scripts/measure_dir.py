@@ -23,8 +23,9 @@ def main(data_dirs):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('datadirs', nargs='+')
+    parser = argparse.ArgumentParser(description="Morpho-MNIST - Measure an image directory")
+    parser.add_argument('datadirs', nargs='+',
+                        help="one or more MNIST image directories to measure")
     args = parser.parse_args()
     print(args.datadirs)
 
