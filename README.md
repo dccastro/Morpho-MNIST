@@ -125,10 +125,10 @@ images = io.load_idx("input_dir/images-idx3-ubyte.gz")
 perturbed_images = np.empty_like(images)
 perturbation_labels = np.random.randint(len(perturbations), size=len(images))
 for n in range(len(images)):
-    morphology = morpho.ImageMorphology(images[n])
+    morphology = morpho.ImageMorphology(images[n], scale=4)
     perturbation = perturbations[perturbation_labels[n]]
     perturbed_hires_image = perturbation(morphology)
-    perturbed_images[n] = morph.downscale(perturbed_hires_image)
+    perturbed_images[n] = morphology.downscale(perturbed_hires_image)
 io.save_idx(perturbed_images, "output_dir/images-idx3-ubyte.gz")
 io.save_idx(perturbation_labels, "output_dir/pert-idx1-ubyte.gz")
 ```
