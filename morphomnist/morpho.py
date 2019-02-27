@@ -95,7 +95,10 @@ class ImageMorphology:
             Low-resolution `uint8` image.
         """
         image = np.asarray(image)
-        down_img = transform.pyramid_reduce(image, downscale=self.scale, order=3)  # type: np.ndarray
+        if self.scale > 1:
+            down_img = transform.pyramid_reduce(image, downscale=self.scale, order=3)  # type: np.ndarray
+        else:
+            down_img = image
         return (255. * down_img).astype(np.uint8)
 
 
