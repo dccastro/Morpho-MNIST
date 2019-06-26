@@ -14,7 +14,10 @@ from morphomnist import io, measure
 
 DATA_ROOT = "/vol/biomedic/users/dc315/mnist"
 CHECKPOINT_ROOT = "/data/morphomnist/checkpoints"
-PCORR_ROOT = "/data/morphomnist/pcorr"
+PCORR_ROOT = "/data/morphomnist/pcorr_fixed"
+SPEC_TO_DATASET = {"plain": "plain",
+                   "plain+thin+thic": "global",
+                   "plain+swel+frac": "local"}
 
 
 def encode(gan: infogan.InfoGAN, x):
@@ -115,7 +118,8 @@ def main(checkpoint_dir, pcorr_dir=None):
     load_checkpoint(trainer, checkpoint_dir)
     gan.eval()
 
-    data_dirs = [os.path.join(DATA_ROOT, '+'.join(dataset_names))]
+    dataset_name = SPEC_TO_DATASET['+'.join(dataset_names)]
+    data_dirs = [os.path.join(DATA_ROOT, dataset_name)]
     test_metrics, test_images, test_labels, test_which = load_test_data(data_dirs)
 
     print(test_metrics.head())
@@ -150,7 +154,7 @@ if __name__ == '__main__':
         "InfoGAN-10c2g62n_plain",
         "InfoGAN-10c3g62n_plain+thin+thic",
         "InfoGAN-10c2g2b62n_plain+swel+frac",
-    ][:1]
+    ]
     np.set_printoptions(precision=2, linewidth=100)
     for spec in specs:
         checkpoint_dir = os.path.join(CHECKPOINT_ROOT, spec)
