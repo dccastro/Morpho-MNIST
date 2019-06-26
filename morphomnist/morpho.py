@@ -9,7 +9,7 @@ _SKEL_LEN_MASK = np.array([[0., 0., 0.], [0., 0., 1.], [np.sqrt(2.), 1., np.sqrt
 
 def _process_img_morph(img, threshold=.5, scale=1):
     if scale > 1:
-        up_img = transform.pyramid_expand(img, upscale=scale, order=3)  # type: np.ndarray
+        up_img = transform.pyramid_expand(img, upscale=scale, order=3, multichannel=False)  # type: np.ndarray
         img = (255. * up_img).astype(img.dtype)
     img_min, img_max = img.min(), img.max()
     bin_img = (img >= img_min + (img_max - img_min) * threshold)
@@ -96,7 +96,7 @@ class ImageMorphology:
         """
         image = np.asarray(image)
         if self.scale > 1:
-            down_img = transform.pyramid_reduce(image, downscale=self.scale, order=3)  # type: np.ndarray
+            down_img = transform.pyramid_reduce(image, downscale=self.scale, order=3, multichannel=False)  # type: np.ndarray
         else:
             down_img = image
         return (255. * down_img).astype(np.uint8)
