@@ -7,8 +7,9 @@ import numpy as np
 from experiments import spec_util
 from experiments.disentanglement import corr_plots
 from experiments.disentanglement.compute_pcorrs import PCORR_ROOT
+from experiments.disentanglement.compute_mig import MIG_ROOT
 
-FIGURE_ROOT = "/vol/biomedic/users/dc315/morphomnist/fig"
+FIGURE_ROOT = "/vol/biomedic/users/dc315/morphomnist/fig_fixed"
 
 
 def set_size(w, h, ax=None):
@@ -23,7 +24,7 @@ def set_size(w, h, ax=None):
     ax.figure.set_size_inches(figw, figh)
 
 
-def plot_partial_correlation(dims, pcorr, cols, hrule=None, ax=None):
+def plot_partial_correlation(dims, pcorr, cols, hrule=None, mig=None, ax=None):
     ax = plt.gca() if ax is None else ax
     corr_plots.hinton(pcorr, cmap='RdBu', ax=ax)
 
@@ -65,8 +66,22 @@ def plot_partial_correlation(dims, pcorr, cols, hrule=None, ax=None):
     if bin_dim > 0:
         add_xlabel(bin_pos, 'binary')
 
+    if mig is not None:
+        ax.text(pcorr.shape[1] + .4, -1, "MIG", ha='center', va='center', size='medium')
+        for i in range(pcorr.shape[0]):
+            ax.text(pcorr.shape[1] + .4, i, f"{mig[i]:.3f}", ha='center', va='center', size='small')
 
-def main(pcorr_path, figure_dir=None):
+
+def load_mig_per_factor(mig_path):
+    with open(mig_path, 'rb') as f:
+        payload = pickle.load(f)
+    mi = payload['mi']
+    entropy = payload['entropy']
+    sorted_mi = np.sort(mi, axis=0)[::-1]
+    return (sorted_mi[0] - sorted_mi[1]) / entropy
+
+
+def main(pcorr_path, mig_path=None, figure_dir=None):
     pcorr_filename = os.path.split(pcorr_path)[-1]
     spec = pcorr_filename.split("_pcorr")[0]
     _, latent_dims, dataset_names = spec_util.parse_setup_spec(spec)
@@ -78,13 +93,19 @@ def main(pcorr_path, figure_dir=None):
         payload = pickle.load(f)
     plt.figure(figsize=fig_size)
 
-    plot_partial_correlation(latent_dims, payload['pcorr'], payload['cols'], payload['hrule'])
-    os.makedirs(figure_dir, exist_ok=True)
+    mig_per_factor = load_mig_per_factor(mig_path) if mig_path else None
+
+    plot_partial_correlation(latent_dims, payload['pcorr'], payload['cols'], payload['hrule'],
+                             mig=mig_per_factor)
     if figure_dir is not None:
-        filename = pcorr_filename.split('.')[0] + ".pdf"
+        os.makedirs(figure_dir, exist_ok=True)
+        filename = pcorr_filename.split('.')[0] + ("+mig" if mig_path else "") + ".pdf"
         shape = np.array(payload['pcorr'].shape)
-        set_size(*(.3 * shape)[::-1])
-        plt.savefig(os.path.join(figure_dir, filename), **fig_kwargs)
+        scale = .25 if mig_path else .3
+        set_size(*(scale * shape)[::-1])
+        fig_path = os.path.join(figure_dir, filename)
+        print("Saving figure to", fig_path)
+        plt.savefig(fig_path, **fig_kwargs)
     plt.show()
 
 
@@ -97,4 +118,5 @@ if __name__ == '__main__':
     for spec in specs:
         for label in ['test', 'sample']:
             pcorr_path = os.path.join(PCORR_ROOT, f"{spec}_pcorr_{label}.pickle")
-            main(pcorr_path, FIGURE_ROOT)
+            mig_path = os.path.join(MIG_ROOT, f"{spec}_mig_{label}.pickle")
+            main(pcorr_path, mig_path, FIGURE_ROOT)
