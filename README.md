@@ -2,21 +2,24 @@
 
 ![Morpho-MNIST morphometrics and perturbations](fig1.png)
 
-[_Morpho-MNIST: Quantitative Assessment and Diagnostics for Representation Learning_](https://arxiv.org/abs/1809.10780)
+[_Morpho-MNIST: Quantitative Assessment and Diagnostics for Representation Learning_](https://arxiv.org/abs/1809.10780) – **Now published in the [_Journal of Machine Learning Research_](http://jmlr.org/papers/v20/19-033.html)!**
 
-> Revealing latent structure in data is an active field of research, having brought exciting new models such as variational autoencoders and generative adversarial networks, and is essential to push machine learning towards unsupervised knowledge discovery. However, a major challenge is the lack of suitable benchmarks for an objective and quantitative evaluation of learned representations. To address this issue we introduce Morpho-MNIST. We extend the popular MNIST dataset by adding a morphometric analysis enabling quantitative comparison of different models, identification of the roles of latent variables, and characterisation of sample diversity. We further propose a set of quantifiable perturbations to assess the performance of unsupervised and supervised methods on challenging tasks such as outlier detection and domain adaptation.
+> Revealing latent structure in data is an active field of research, having introduced exciting technologies such as variational autoencoders and adversarial networks, and is essential to push machine learning towards unsupervised knowledge discovery. However, a major challenge is the lack of suitable benchmarks for an objective and quantitative evaluation of learned representations. To address this issue we introduce Morpho-MNIST, a framework that aims to answer: "to what extent has my model learned to represent specific factors of variation in the data?" We extend the popular MNIST dataset by adding a morphometric analysis enabling quantitative comparison of trained models, identification of the roles of latent variables, and characterisation of sample diversity. We further propose a set of quantifiable perturbations to assess the performance of unsupervised and supervised methods on challenging tasks such as outlier detection and domain adaptation.
 
 If you use these tools or datasets in your publications, please consider citing the accompanying paper with a BibTeX entry similar to the following:
 
 ```
-@unpublished{castro2018morphomnist,
+@article{castro2019morphomnist,
     author = {Castro, Daniel C. and Tan, Jeremy and Kainz, Bernhard and Konukoglu, Ender and Glocker, Ben},
     title = {{Morpho-MNIST}: Quantitative Assessment and Diagnostics for Representation Learning},
-    year = {2018},
-    eprint = {arXiv:1809.10780},
-    url = {https://arxiv.org/abs/1809.10780},
+    year = {2019},
+    journal = {Journal of Machine Learning Research},
+    volume = {20},
+    eprint = {arXiv:1809.10780}
 }
 ```
+
+> Castro, D. C., Tan, J., Kainz, B., Konukoglu, E., & Glocker, B. (2019). Morpho-MNIST: Quantitative Assessment and Diagnostics for Representation Learning. _Journal of Machine Learning Research_, 20.
 
 **Table of Contents**
 
