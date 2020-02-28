@@ -1,9 +1,28 @@
 import multiprocessing
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
 
 from .morpho import bounding_parallelogram, ImageMoments, ImageMorphology
+
+
+class Morphometrics(NamedTuple):
+    """Measured shape attributes of an image.
+
+    - area: Total area/image mass.
+    - length: Length of the estimated skeleton.
+    - thickness: Mean thickness along the skeleton.
+    - slant: Horizontal shear, in radians.
+    - width: Width of the bounding parallelogram.
+    - height: Height of the bounding parallelogram.
+    """
+    area: float
+    length: float
+    thickness: float
+    slant: float
+    width: float
+    height: float
 
 
 def measure_image(image, threshold: float = .5, scale: int = 4, bound_frac: float = .02,
@@ -27,18 +46,8 @@ def measure_image(image, threshold: float = .5, scale: int = 4, bound_frac: floa
 
     Returns
     -------
-    area : float
-        Total area/image mass.
-    length : float
-        Length of the estimated skeleton.
-    thickness : float
-        Mean thickness along the skeleton.
-    slant : float
-        Horizontal shear, in radians.
-    width : float
-        Width of the bounding parallelogram.
-    height : float
-        Height of the bounding parallelogram.
+    Morphometrics
+        A namedtuple containing the measured area, length, thickness, slant, width, and height.
     """
     image = np.asarray(image)
     morph = ImageMorphology(image, threshold, scale)
@@ -59,7 +68,7 @@ def measure_image(image, threshold: float = .5, scale: int = 4, bound_frac: floa
         print(f"Slant: {np.rad2deg(slant):.0f}°")
         print(f"Dimensions: {width:.1f} x {height:.1f}")
 
-    return area, length, thickness, slant, width, height
+    return Morphometrics(area, length, thickness, slant, width, height)
 
 
 def _measure_image_unpack(arg):
@@ -125,6 +134,5 @@ def measure_batch(images, threshold: float = .5, scale: int = 4, bound_frac: flo
         gen = plain_progress(gen)
 
     results = list(gen)
-    columns = ['area', 'length', 'thickness', 'slant', 'width', 'height']
-    df = pd.DataFrame(results, columns=columns)
+    df = pd.DataFrame(results)
     return df
