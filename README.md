@@ -15,11 +15,12 @@ If you use these tools or datasets in your publications, please consider citing 
     year = {2019},
     journal = {Journal of Machine Learning Research},
     volume = {20},
+    number = {178},
     eprint = {arXiv:1809.10780}
 }
 ```
 
-> Castro, D. C., Tan, J., Kainz, B., Konukoglu, E., & Glocker, B. (2019). Morpho-MNIST: Quantitative Assessment and Diagnostics for Representation Learning. _Journal of Machine Learning Research_, 20.
+> Castro, D. C., Tan, J., Kainz, B., Konukoglu, E., & Glocker, B. (2019). Morpho-MNIST: Quantitative Assessment and Diagnostics for Representation Learning. _Journal of Machine Learning Research_, 20(178).
 
 **Table of Contents**
 
