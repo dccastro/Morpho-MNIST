@@ -165,6 +165,15 @@ class Fracture(Perturbation):
     @staticmethod
     def _draw_line(img, p0, p1, brush):
         h, w = brush.shape
+        h_start, w_start = h // 2, w // 2
+        h_end, w_end = h - h_start, w - w_start
         ii, jj = draw.line(*p0, *p1)
         for i, j in zip(ii, jj):
-            img[i:i + h, j:j + w] &= brush
+            try:
+                img[i - h_start:i + h_end, j - w_start:j + w_end] &= brush
+            except ValueError:
+                # Rare case: Fracture would leave image outline, because
+                # selected point on skeleton is too close to image outline.
+                # Ignore the fracture parts outside the image, but keep the
+                # parts within the image.
+                pass
