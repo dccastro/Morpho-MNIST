@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import numpy as np
-from scipy.ndimage import filters
+from scipy import ndimage
 from skimage import morphology, transform
 
 _SKEL_LEN_MASK = np.array([[0., 0., 0.], [0., 0., 1.], [np.sqrt(2.), 1., np.sqrt(2.)]])
@@ -65,7 +65,7 @@ class ImageMorphology:
     def stroke_length(self) -> float:
         """Length of the estimated skeleton."""
         skel = self.skeleton.astype(float)
-        conv = filters.correlate(skel, _SKEL_LEN_MASK, mode='constant')
+        conv = ndimage.correlate(skel, _SKEL_LEN_MASK, mode='constant')
         up_length = np.einsum('ij,ij->', conv, skel)  # type: float
         return up_length / self.scale
 

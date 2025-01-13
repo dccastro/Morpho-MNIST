@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.ndimage import filters
+from scipy import ndimage
 from skimage import morphology
 
 from .morpho import ImageMoments, ImageMorphology
@@ -48,7 +48,7 @@ def num_neighbours(skel) -> np.ndarray:
         Array containing the numbers of neighbours at each skeleton pixel and 0 elsewhere.
     """
     skel = np.asarray(skel, dtype=int)
-    return filters.convolve(skel, _NB_MASK, mode='constant') * skel
+    return ndimage.convolve(skel, _NB_MASK, mode='constant') * skel
 
 
 def erase(skel, seeds, r: int) -> np.ndarray:
