@@ -13,7 +13,7 @@ def _process_img_morph(img, threshold=.5, scale=1):
         img = (255. * up_img).astype(img.dtype)
     img_min, img_max = img.min(), img.max()
     bin_img = (img >= img_min + (img_max - img_min) * threshold)
-    skel, dist_map = morphology.medial_axis(bin_img, return_distance=True)
+    skel, dist_map = morphology.medial_axis(bin_img, return_distance=True, rng=42)
     return img, bin_img, skel, dist_map
 
 
