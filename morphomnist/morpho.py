@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import numpy as np
-from scipy.ndimage import filters
+from scipy import ndimage
 from skimage import morphology, transform
 
 _SKEL_LEN_MASK = np.array([[0., 0., 0.], [0., 0., 1.], [np.sqrt(2.), 1., np.sqrt(2.)]])
@@ -9,11 +9,11 @@ _SKEL_LEN_MASK = np.array([[0., 0., 0.], [0., 0., 1.], [np.sqrt(2.), 1., np.sqrt
 
 def _process_img_morph(img, threshold=.5, scale=1):
     if scale > 1:
-        up_img = transform.pyramid_expand(img, upscale=scale, order=3, multichannel=False)  # type: np.ndarray
+        up_img = transform.pyramid_expand(img, upscale=scale, order=3, channel_axis=None)  # type: np.ndarray
         img = (255. * up_img).astype(img.dtype)
     img_min, img_max = img.min(), img.max()
     bin_img = (img >= img_min + (img_max - img_min) * threshold)
-    skel, dist_map = morphology.medial_axis(bin_img, return_distance=True)
+    skel, dist_map = morphology.medial_axis(bin_img, return_distance=True, rng=42)
     return img, bin_img, skel, dist_map
 
 
@@ -65,7 +65,7 @@ class ImageMorphology:
     def stroke_length(self) -> float:
         """Length of the estimated skeleton."""
         skel = self.skeleton.astype(float)
-        conv = filters.correlate(skel, _SKEL_LEN_MASK, mode='constant')
+        conv = ndimage.correlate(skel, _SKEL_LEN_MASK, mode='constant')
         up_length = np.einsum('ij,ij->', conv, skel)  # type: float
         return up_length / self.scale
 
@@ -96,7 +96,7 @@ class ImageMorphology:
         """
         image = np.asarray(image)
         if self.scale > 1:
-            down_img = transform.pyramid_reduce(image, downscale=self.scale, order=3, multichannel=False)  # type: np.ndarray
+            down_img = transform.pyramid_reduce(image, downscale=self.scale, order=3, channel_axis=None)  # type: np.ndarray
         else:
             down_img = image
         return (255. * down_img).astype(np.uint8)
