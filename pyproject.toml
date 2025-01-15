@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Morpho-MNIST"
+description = "Morpho-MNIST: A dataset of handwritten digits with labels for morphological operations"
+version = "1.0.1"
+requires-python = ">=3.8"
+authors = [
+  {name = "Daniel Coelho de Castro", email = "dcdecastro@gmail.com"},
+]
+maintainers = [
+  {name = "Daniel Coelho de Castro", email = "dcdecastro@gmail.com"},
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+
+dependencies = [
+  "numpy",
+  "pandas",
+  "scipy>=1.8.0",
+  "scikit-image>=0.19",
+]
+
+[tool.setuptools]
+packages = ['morphomnist']
